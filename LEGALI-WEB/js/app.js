@@ -918,7 +918,7 @@ async function downloadAsPDF(markdownText, title) {
 
   function checkY(needed = 8) {
     if (y + needed > pageH - mBot) {
-      drawFooter();
+      // No dibujar footer aquí — se dibuja en el bucle final para todas las páginas
       doc.addPage();
       page++;
       drawPageHeader();
@@ -933,7 +933,10 @@ async function downloadAsPDF(markdownText, title) {
     doc.setFont("helvetica", fontStyle);
     doc.setFontSize(fontSize);
     doc.setTextColor(...color);
-    const wrapped = doc.splitTextToSize(text || " ", maxW - indent);
+    // maxW ya descuenta ambos márgenes; el indent solo desplaza el origen,
+    // por eso hay que restarlo del ancho disponible para evitar overflow.
+    const avail = maxW - indent;
+    const wrapped = doc.splitTextToSize(text || " ", avail);
     for (const wl of wrapped) {
       checkY(lineH);
       doc.text(wl, mLeft + indent, y, { align });
@@ -1065,52 +1068,68 @@ async function downloadAsPDF(markdownText, title) {
       }
 
       case "bullet": {
-        const indent = tok.level * 5;
-        const bullet = tok.level === 0 ? "•" : "-";
-        const text   = `${bullet}  ${stripEmojis(cleanInline(tok.text))}`;
-        writeLine(text, { fontSize: 10, color: DARK, indent, lineH: 5.5 });
+        const indent  = tok.level * 6;
+        const symbol  = tok.level === 0 ? "\u2022" : "-";
+        const symW    = 5; // ancho aproximado del símbolo + espacio
+        const text    = stripEmojis(cleanInline(tok.text));
+        checkY(5.5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...DARK);
+        // Dibujar símbolo
+        doc.text(symbol, mLeft + indent, y);
+        // Dibujar texto con wrap correcto
+        const wrapped = doc.splitTextToSize(text || " ", maxW - indent - symW);
+        for (let wi = 0; wi < wrapped.length; wi++) {
+          if (wi > 0) checkY(5.5);
+          doc.text(wrapped[wi], mLeft + indent + symW, y);
+          y += 5.5;
+        }
         break;
       }
 
       case "ordered": {
-        // Llevar contador por nivel para numeración correcta
         const lvl = tok.level || 0;
         orderedCounters[lvl] = (orderedCounters[lvl] || 0) + 1;
-        // Reiniciar niveles inferiores al cambiar de bloque
         Object.keys(orderedCounters).forEach(k => { if (Number(k) > lvl) delete orderedCounters[k]; });
-        const indent = lvl * 5 + 2;
-        const label  = `${orderedCounters[lvl]}.`;
-        const text   = stripEmojis(cleanInline(tok.text));
-        // Dibujar número y texto alineados
+        const indent  = lvl * 6 + 2;
+        const label   = `${orderedCounters[lvl]}.`;
+        const numW    = 7; // ancho reservado para el número
+        const text    = stripEmojis(cleanInline(tok.text));
+        checkY(5.5);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(...DARK);
-        checkY(5.5);
         doc.text(label, mLeft + indent, y);
         doc.setFont("helvetica", "normal");
-        const wrapped = doc.splitTextToSize(text || " ", maxW - indent - 7);
+        const wrapped = doc.splitTextToSize(text || " ", maxW - indent - numW);
         for (let wi = 0; wi < wrapped.length; wi++) {
           if (wi > 0) checkY(5.5);
-          doc.text(wrapped[wi], mLeft + indent + 7, y);
+          doc.text(wrapped[wi], mLeft + indent + numW, y);
           y += 5.5;
         }
         break;
       }
 
       case "blockquote": {
-        const bqText = stripEmojis(cleanInline(tok.text));
-        const bqWrapped = doc.splitTextToSize(bqText || " ", maxW - 7);
-        const bqH = bqWrapped.length * 5.5 + 2;
+        const bqOffset = 6;   // offset horizontal del texto desde el margen
+        const barW     = 2.5; // ancho de la barra azul
+        const bqText   = stripEmojis(cleanInline(tok.text));
+        // Ancho disponible: maxW menos el offset del texto
+        const bqWrapped = doc.splitTextToSize(bqText || " ", maxW - bqOffset);
+        const lineH    = 5.2;
+        const bqH      = bqWrapped.length * lineH + 3;
         checkY(bqH);
-        // Dibujar barra lateral ANTES del texto, usando y actual
+        const bqTop = y - 4;
+        // Barra lateral azul con altura exacta
         doc.setFillColor(...BLUE);
-        doc.rect(mLeft, y - 4, 2.5, bqH, "F");
+        doc.rect(mLeft, bqTop, barW, bqH, "F");
         doc.setFont("helvetica", "italic");
         doc.setFontSize(9.5);
         doc.setTextColor(...GREY);
         for (const wl of bqWrapped) {
-          doc.text(wl, mLeft + 6, y);
-          y += 5.5;
+          doc.text(wl, mLeft + bqOffset, y);
+          y += lineH;
         }
         y += 2;
         break;
@@ -1172,16 +1191,31 @@ async function downloadAsPDF(markdownText, title) {
 
 // ── Descargar como Word (.docx usando docx.js) ────────────────
 async function downloadAsWord(markdownText, title) {
-  if (typeof docx === "undefined") {
-    await loadScript("https://unpkg.com/docx@8.5.0/build/index.js");
+  try {
+    // docx@8.5.0 expone la librería como window.docx
+    if (typeof window.docx === "undefined") {
+      await loadScript("https://unpkg.com/docx@8.5.0/build/index.js");
+    }
+    // Segunda verificación: si unpkg falla, intentar CDN alternativo
+    if (typeof window.docx === "undefined") {
+      await loadScript("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js");
+    }
+    if (typeof window.docx === "undefined") {
+      alert("No se pudo cargar la librería Word. Verifique su conexión a internet.");
+      return;
+    }
+  } catch (e) {
+    alert("Error cargando librería Word: " + e.message);
+    return;
   }
 
-  const {
-    Document, Packer, Paragraph, TextRun, HeadingLevel,
-    AlignmentType, BorderStyle, Header, Footer, PageNumber,
-    Table, TableRow, TableCell, WidthType, ShadingType,
-    VerticalAlign,
-  } = docx;
+  try {
+    const {
+      Document, Packer, Paragraph, TextRun, HeadingLevel,
+      AlignmentType, BorderStyle, Header, Footer, PageNumber,
+      Table, TableRow, TableCell, WidthType, ShadingType,
+      VerticalAlign,
+    } = window.docx;
 
   const BLUE_HEX = "1B4FD8";
   const GREY_HEX = "888888";
@@ -1189,21 +1223,26 @@ async function downloadAsWord(markdownText, title) {
 
   // ── Helper: construir runs de inline markdown ─────────────────
   function inlineRuns(text, baseOpts = {}) {
-    // Soporta **bold**, *italic*, `code`, ***bold italic***
+    // Soporta ***bold italic***, **bold**, __bold__, *italic*, _italic_, `code`, [link](url)
     const parts = [];
+    // Normalizar: convertir __x__ → **x** y _x_ → *x* antes de procesar
+    const normalized = (text || "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // extraer texto de links
+      .replace(/__(.+?)__/g, "**$1**")           // __bold__ → **bold**
+      .replace(/(?<!\*|\w)_(.+?)_(?!\*|\w)/g, "*$1*"); // _italic_ → *italic*
     const re = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
     let last = 0, m;
     const clean = (s) => stripEmojis(s);
-    while ((m = re.exec(text)) !== null) {
-      if (m.index > last) parts.push(new TextRun({ text: clean(text.slice(last, m.index)), ...baseOpts }));
-      if (m[2]) parts.push(new TextRun({ text: clean(m[2]), ...baseOpts, bold: true, italics: true }));
+    while ((m = re.exec(normalized)) !== null) {
+      if (m.index > last) parts.push(new TextRun({ text: clean(normalized.slice(last, m.index)), ...baseOpts }));
+      if (m[2])      parts.push(new TextRun({ text: clean(m[2]), ...baseOpts, bold: true, italics: true }));
       else if (m[3]) parts.push(new TextRun({ text: clean(m[3]), ...baseOpts, bold: true }));
       else if (m[4]) parts.push(new TextRun({ text: clean(m[4]), ...baseOpts, italics: true }));
-      else if (m[5]) parts.push(new TextRun({ text: clean(m[5]), font: "Courier New", size: (baseOpts.size || 22) - 1, color: "444444" }));
+      else if (m[5]) parts.push(new TextRun({ text: clean(m[5]), font: "Courier New", size: (baseOpts.size || 22) - 2, color: "444444" }));
       last = m.index + m[0].length;
     }
-    if (last < text.length) parts.push(new TextRun({ text: clean(text.slice(last)), ...baseOpts }));
-    return parts.length ? parts : [new TextRun({ text: clean(text), ...baseOpts })];
+    if (last < normalized.length) parts.push(new TextRun({ text: clean(normalized.slice(last)), ...baseOpts }));
+    return parts.length ? parts : [new TextRun({ text: clean(normalized), ...baseOpts })];
   }
 
   // ── Helper: celda de tabla ─────────────────────────────────────
@@ -1436,6 +1475,11 @@ async function downloadAsWord(markdownText, title) {
   a.download = `LEGALI-${stripEmojis(title).slice(0, 40).replace(/\s+/g, "-")}.docx`;
   a.click();
   URL.revokeObjectURL(url);
+
+  } catch (e) {
+    console.error("Error generando Word:", e);
+    alert("Error al generar el documento Word: " + e.message);
+  }
 }
 
 // ── Cargador dinámico de scripts ──────────────────────────────
