@@ -953,48 +953,66 @@ async function downloadAsPDF(markdownText, title) {
     if (!header || !header.length) return;
     const cols   = header.length;
     const colW   = maxW / cols;
-    const cellH  = 7;
     const pad    = 2.5;
+    const minH   = 7;
+
+    // Calcular altura real de cada fila según wrap de texto
+    function rowHeight(cells) {
+      let maxLines = 1;
+      cells.forEach(cell => {
+        const t = stripEmojis(cleanInline(cell || ""));
+        const wrapped = doc.splitTextToSize(t, colW - pad * 2);
+        if (wrapped.length > maxLines) maxLines = wrapped.length;
+      });
+      return Math.max(minH, maxLines * 4.5 + 3);
+    }
 
     // Cabecera
-    checkY(cellH + 2);
+    const hH = rowHeight(header);
+    checkY(hH + 2);
+    const hTop = y - 5;
     for (let c = 0; c < cols; c++) {
       doc.setFillColor(...TBL_HEAD_BG);
-      doc.rect(mLeft + c * colW, y - 5, colW, cellH, "F");
+      doc.rect(mLeft + c * colW, hTop, colW, hH, "F");
       doc.setDrawColor(...TBL_BORDER);
       doc.setLineWidth(0.2);
-      doc.rect(mLeft + c * colW, y - 5, colW, cellH, "S");
+      doc.rect(mLeft + c * colW, hTop, colW, hH, "S");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(...TBL_HEAD_TXT);
       const hText = stripEmojis(cleanInline(header[c]));
       const hWrap = doc.splitTextToSize(hText, colW - pad * 2);
-      doc.text(hWrap[0] || "", mLeft + c * colW + pad, y);
+      hWrap.forEach((hl, li) => {
+        doc.text(hl, mLeft + c * colW + pad, hTop + 5 + li * 4.5);
+      });
     }
-    y += cellH - 4;
+    y = hTop + hH + 1;
 
-    // Filas
+    // Filas de datos
     rows.forEach((row, ri) => {
-      const rowH = cellH;
-      checkY(rowH + 2);
+      const rH = rowHeight(row);
+      checkY(rH + 2);
+      const rTop = y - 1;
       for (let c = 0; c < cols; c++) {
         if (ri % 2 === 0) {
           doc.setFillColor(...TBL_ROW_ALT);
-          doc.rect(mLeft + c * colW, y - 5, colW, rowH, "F");
+          doc.rect(mLeft + c * colW, rTop, colW, rH, "F");
         }
         doc.setDrawColor(...TBL_BORDER);
         doc.setLineWidth(0.15);
-        doc.rect(mLeft + c * colW, y - 5, colW, rowH, "S");
+        doc.rect(mLeft + c * colW, rTop, colW, rH, "S");
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(...DARK);
         const cText = stripEmojis(cleanInline(row[c] || ""));
         const cWrap = doc.splitTextToSize(cText, colW - pad * 2);
-        doc.text(cWrap[0] || "", mLeft + c * colW + pad, y);
+        cWrap.forEach((cl, li) => {
+          doc.text(cl, mLeft + c * colW + pad, rTop + 5 + li * 4.5);
+        });
       }
-      y += rowH - 4;
+      y = rTop + rH + 1;
     });
-    y += 4;
+    y += 3;
   }
 
   // ── Inicio ───────────────────────────────────────────────────
@@ -1012,8 +1030,12 @@ async function downloadAsPDF(markdownText, title) {
 
   // ── Renderizar tokens ─────────────────────────────────────────
   const tokens = parseMdTokens(markdownText);
+  let orderedCounters = {};
 
   for (const tok of tokens) {
+    // Reiniciar contadores de lista numerada si el token no es ordered
+    if (tok.type !== "ordered" && tok.type !== "blank") orderedCounters = {};
+
     switch (tok.type) {
 
       case "heading": {
@@ -1051,31 +1073,65 @@ async function downloadAsPDF(markdownText, title) {
       }
 
       case "ordered": {
-        const text = stripEmojis(cleanInline(tok.text));
-        writeLine(text, { fontSize: 10, color: DARK, indent: 5, lineH: 5.5 });
+        // Llevar contador por nivel para numeración correcta
+        const lvl = tok.level || 0;
+        orderedCounters[lvl] = (orderedCounters[lvl] || 0) + 1;
+        // Reiniciar niveles inferiores al cambiar de bloque
+        Object.keys(orderedCounters).forEach(k => { if (Number(k) > lvl) delete orderedCounters[k]; });
+        const indent = lvl * 5 + 2;
+        const label  = `${orderedCounters[lvl]}.`;
+        const text   = stripEmojis(cleanInline(tok.text));
+        // Dibujar número y texto alineados
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...DARK);
+        checkY(5.5);
+        doc.text(label, mLeft + indent, y);
+        doc.setFont("helvetica", "normal");
+        const wrapped = doc.splitTextToSize(text || " ", maxW - indent - 7);
+        for (let wi = 0; wi < wrapped.length; wi++) {
+          if (wi > 0) checkY(5.5);
+          doc.text(wrapped[wi], mLeft + indent + 7, y);
+          y += 5.5;
+        }
         break;
       }
 
       case "blockquote": {
-        checkY(7);
-        // Barra lateral izquierda
+        const bqText = stripEmojis(cleanInline(tok.text));
+        const bqWrapped = doc.splitTextToSize(bqText || " ", maxW - 7);
+        const bqH = bqWrapped.length * 5.5 + 2;
+        checkY(bqH);
+        // Dibujar barra lateral ANTES del texto, usando y actual
         doc.setFillColor(...BLUE);
-        doc.rect(mLeft, y - 4.5, 2, 6, "F");
-        writeLine(stripEmojis(cleanInline(tok.text)), {
-          fontSize: 9.5, fontStyle: "italic", color: GREY, indent: 5, lineH: 5.5,
-        });
+        doc.rect(mLeft, y - 4, 2.5, bqH, "F");
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(9.5);
+        doc.setTextColor(...GREY);
+        for (const wl of bqWrapped) {
+          doc.text(wl, mLeft + 6, y);
+          y += 5.5;
+        }
+        y += 2;
         break;
       }
 
       case "code": {
         const cLines = tok.text.split("\n");
-        const bH     = cLines.length * 4.5 + 5;
-        checkY(bH);
+        const bH     = cLines.length * 4.5 + 6;
+        // Si el bloque entero no cabe, saltar a nueva página
+        if (y + bH > pageH - mBot) {
+          drawFooter();
+          doc.addPage();
+          page++;
+          drawPageHeader();
+        }
+        const codeTop = y - 4;
         doc.setFillColor(242, 244, 250);
-        doc.rect(mLeft, y - 4, maxW, bH, "F");
+        doc.rect(mLeft, codeTop, maxW, bH, "F");
         doc.setDrawColor(...LGREY);
         doc.setLineWidth(0.2);
-        doc.rect(mLeft, y - 4, maxW, bH, "S");
+        doc.rect(mLeft, codeTop, maxW, bH, "S");
         doc.setFont("courier", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...DARK);
@@ -1083,7 +1139,7 @@ async function downloadAsPDF(markdownText, title) {
           doc.text(cl.slice(0, 90), mLeft + 3, y);
           y += 4.5;
         }
-        y += 3;
+        y += 4;
         break;
       }
 
@@ -1218,10 +1274,10 @@ async function downloadAsWord(markdownText, title) {
       }
 
       case "paragraph": {
-        const text = stripEmojis(cleanInline(tok.text));
-        if (!text) break;
+        const rawText = tok.text;
+        if (!rawText || !stripEmojis(cleanInline(rawText))) break;
         children.push(new Paragraph({
-          children: inlineRuns(tok.text, { size: 22, color: "1E1E28" }),
+          children: inlineRuns(rawText, { size: 22, color: "1E1E28" }),
           spacing: { after: 100 },
           alignment: AlignmentType.JUSTIFIED,
         }));
@@ -1284,12 +1340,20 @@ async function downloadAsWord(markdownText, title) {
           }),
           ...tok.rows.map((row, ri) => new TableRow({
             children: tok.header.map((_, ci) => {
-              const cell = makeCell(row[ci] || "");
-              // Alternate row shading
-              if (ri % 2 === 1) {
-                cell.options = cell.options || {};
-              }
-              return cell;
+              return new TableCell({
+                children: [new Paragraph({
+                  children: inlineRuns(row[ci] || "", {
+                    color: "1E1E28",
+                    size: 19,
+                  }),
+                  spacing: { before: 60, after: 60 },
+                })],
+                shading: ri % 2 === 1
+                  ? { fill: "F1F5FD", type: ShadingType.CLEAR }
+                  : { fill: "FFFFFF", type: ShadingType.CLEAR },
+                verticalAlign: VerticalAlign.CENTER,
+                margins: { top: 60, bottom: 60, left: 100, right: 100 },
+              });
             }),
           })),
         ];
@@ -1329,7 +1393,11 @@ async function downloadAsWord(markdownText, title) {
     numbering: {
       config: [{
         reference: "default-numbering",
-        levels: [{ level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.LEFT }],
+        levels: [
+          { level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 260 } } } },
+          { level: 1, format: "decimal", text: "%1.%2.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 260 } } } },
+          { level: 2, format: "decimal", text: "%1.%2.%3.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 1080, hanging: 260 } } } },
+        ],
       }],
     },
     sections: [{
