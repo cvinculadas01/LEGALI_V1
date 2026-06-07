@@ -731,23 +731,169 @@ function extractDocTitle(question) {
   return clean || "Consulta-LEGALI";
 }
 
-// ── Limpiar emojis (jsPDF / docx no los soportan bien) ───────
+// ── Limpiar caracteres especiales que jsPDF no puede renderizar ──
+// jsPDF con fuentes estándar (Helvetica/Courier) solo soporta Latin-1 básico
+// (U+0020–U+007E) más algunos caracteres Latin Extended-A con acento.
+// Todo lo demás produce glifos corruptos o símbolos sin sentido.
 function stripEmojis(str) {
-  return str.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{1F300}-\u{1F9FF}]|\u26A0|\u2696|\u2764|\u2705|\u274C|\u26A1|\u{1F4CB}|\u{1F4CC}|\u{1F4D1}|\u{1F4A1}|\u{1F4BC}|\u{1F6A8}/gu, "").trim();
+  if (!str) return "";
+  return str
+    // ── 1. Emojis y símbolos Unicode fuera de Latin-1 ──────────
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, "")   // Emojis misceláneos
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, "")   // Emojis de símbolos/naturaleza
+    .replace(/[\u{2600}-\u{26FF}]/gu, "")      // Misceláneos (☀ ☁ ✂ etc.)
+    .replace(/[\u{2700}-\u{27BF}]/gu, "")      // Dingbats (✦ ✧ ✨ etc.)
+    .replace(/[\u{2300}-\u{23FF}]/gu, "")      // Símbolos técnicos misceláneos
+    .replace(/[\u{2B00}-\u{2BFF}]/gu, "")      // Flechas suplementarias
+    .replace(/[\u{1F100}-\u{1F1FF}]/gu, "")   // Enclosed alphanumerics supplement
+
+    // ── 2. Caracteres Latin Extended que Helvetica NO tiene glifo ──
+    // Bloque Latin Extended-B y caracteres sueltos problemáticos:
+    // þ Þ (U+00FE/U+00DE), ð Ð (U+00F0/U+00D0), ß (U+00DF),
+    // Ø ø (U+00D8/U+00F8), Ý ý (U+00DD/U+00FD), â ã ä å (etc.)
+    // La estrategia es transliterar los más comunes en vez de borrarlos.
+    .replace(/[ÀÁÂÃÄÅàáâãäå]/g, (c) => {
+      const m = { "À":"A","Á":"A","Â":"A","Ã":"A","Ä":"A","Å":"A",
+                  "à":"a","á":"a","â":"a","ã":"a","ä":"a","å":"a" };
+      return m[c] || "a";
+    })
+    .replace(/[ÈÉÊËèéêë]/g, (c) => {
+      const m = { "È":"E","É":"E","Ê":"E","Ë":"E","è":"e","é":"e","ê":"e","ë":"e" };
+      return m[c] || "e";
+    })
+    .replace(/[ÌÍÎÏìíîï]/g, (c) => {
+      const m = { "Ì":"I","Í":"I","Î":"I","Ï":"I","ì":"i","í":"i","î":"i","ï":"i" };
+      return m[c] || "i";
+    })
+    .replace(/[ÒÓÔÕÖØòóôõöø]/g, (c) => {
+      const m = { "Ò":"O","Ó":"O","Ô":"O","Õ":"O","Ö":"O","Ø":"O",
+                  "ò":"o","ó":"o","ô":"o","õ":"o","ö":"o","ø":"o" };
+      return m[c] || "o";
+    })
+    .replace(/[ÙÚÛÜùúûü]/g, (c) => {
+      const m = { "Ù":"U","Ú":"U","Û":"U","Ü":"U","ù":"u","ú":"u","û":"u","ü":"u" };
+      return m[c] || "u";
+    })
+    .replace(/[ÝýÿŸ]/g,  "y")
+    .replace(/[ÑñŃń]/g,  (c) => /[ÑÑ]/.test(c) ? "N" : "n")
+    .replace(/[ÇçĆć]/g,  (c) => /[ÇĆ]/.test(c) ? "C" : "c")
+    .replace(/[þÞ]/g,    "")   // thorn — no tiene equivalente útil
+    .replace(/[ðÐ]/g,    "d")  // eth → d
+    .replace(/[ß]/g,     "ss") // eszett → ss
+    .replace(/[œŒ]/g,    (c) => c === "Œ" ? "OE" : "oe")
+    .replace(/[æÆ]/g,    (c) => c === "Æ" ? "AE" : "ae")
+
+    // ── 3. Símbolos de flechas → texto ASCII ───────────────────
+    .replace(/[→⇒⟹⟶▶►]/g, "->")
+    .replace(/[←⇐⟵◀◄]/g,  "<-")
+    .replace(/[↑⇑]/g,       "^")
+    .replace(/[↓⇓]/g,       "v")
+    .replace(/[↔⇔]/g,       "<->")
+
+    // ── 4. Símbolos decorativos de listas/viñetas ──────────────
+    .replace(/[•·‣⁃]/g,                   "-")
+    .replace(/[◈◉◊○●◐◑◒◓◔◕◦]/g,          "*")
+    .replace(/[▸▶▷▻▾▿▼▽►]/g,              ">")
+    .replace(/[✓✔☑]/g,                    "[x]")
+    .replace(/[✗✘☒]/g,                    "[ ]")
+    .replace(/[★☆✩✪✫✬✭✮✯✰✦✧]/g,          "*")
+
+    // ── 5. Símbolos de advertencia/riesgo frecuentes en el LLM ─
+    // Ø=Ý4  Ø=ßá  Ø=ßâ  son secuencias de chars corruptos que llegan juntos
+    // Los limpiamos capturando el patrón Ø seguido de = y cualquier caracter
+    .replace(/Ø[=]?[ÝÞßàáâãäåæ]?\d?/g, "")
+
+    // ── 6. Otros símbolos misceláneos problemáticos ────────────
+    .replace(/[«»‹›„""'']/g,  '"')  // comillas especiales → ASCII
+    .replace(/[–—]/g,         "-")  // guiones largos → guion simple
+    .replace(/[…]/g,          "...") // elipsis → 3 puntos
+    .replace(/[™®©]/g,        "")
+    .replace(/[§¶†‡]/g,       "")
+    .replace(/[°]/g,          " grados")
+    .replace(/[¿¡]/g,         "")   // signos invertidos españoles — jsPDF los pierde
+
+    // ── 7. Caracteres de control y no imprimibles ──────────────
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+
+    // ── 8. Limpiar espacios múltiples resultantes ──────────────
+    .replace(/ {2,}/g, " ")
+    .trim();
+}
+
+// ── Normalizar texto raw de la IA antes de parsear ────────────
+// Convierte patrones decorativos/especiales en Markdown limpio
+function normalizeMd(md) {
+  return md
+    // ── PASO 0: Eliminar secuencias corruptas de chars Latin-Extended ──
+    // El LLM a veces produce bloques como "Ø=Ý4 RIESGO" o "Ø=ßá TÁCTICA"
+    // que son combinaciones de chars extendidos sin glifo en Helvetica.
+    // Los capturamos con un patrón genérico antes de cualquier otra limpieza.
+    .replace(/[ØÙÚÛÜÝÞßàáâãäåæ][=]?[ØÙÚÛÜÝÞßàáâãäåæ0-9]?/g, "")
+
+    // ── PASO 1: Eliminar caracteres decorativos al INICIO de línea ──
+    // Ej: "þ ADVERTENCIA" → "ADVERTENCIA"
+    //     "$` LEGITIMACIÓN" → "LEGITIMACIÓN"
+    //     "%¡ checklist" → "checklist"
+    //     "' Verificar" → "Verificar"
+    //     "& EXCEPCIÓN" → "EXCEPCION"
+    .replace(/^[ \t]*[þÞ$%&'][`a-zA-Z!¡°]?[ \t]*/gm, "")
+
+    // ── PASO 2: Eliminar símbolos sueltos de advertencia/riesgo ──
+    // Ej: "Ô RIESGO" → "RIESGO"  "ô TÁCTICA" → "TACTICA"
+    .replace(/^[ \t]*[ÔôÃãÄäÅå!¡][ \t]+/gm, "")
+
+    // ── PASO 3: Viñetas no estándar → "- " ────────────────────
+    // Ej: "• texto" → "- texto"   "' texto" → "- texto"
+    .replace(/^([ \t]*)[•·‣⁃''′‚]\s+/gm, "$1- ")
+
+    // ── PASO 4: Flechas de flujo de proceso → " -> " ──────────
+    // Ej: "[1] DEMANDA !' Art. 25" → "[1] DEMANDA -> Art. 25"
+    .replace(/[ \t]*!["'][ \t]*/g, " -> ")
+    .replace(/[ \t]*!'?[ \t]*/g,   " -> ")
+
+    // ── PASO 5: Eliminar líneas que SOLO son conectores verticales ──
+    // Ej: línea con solo "     !"  o "     !'"
+    .replace(/^[ \t]*!["'][ \t]*$/gm, "")
+    .replace(/^[ \t]*["'][ \t]*$/gm, "")
+
+    // ── PASO 6: Bloques de flujo muy indentados → quitar indent ──
+    .replace(/^[ \t]{2,}(\[.+\].*)/gm, "$1")
+    .replace(/^[ \t]{2,}(\(.+\).*)/gm, "$1")
+
+    // ── PASO 7: Líneas que comienzan con "NN" seguido de texto ──
+    // El LLM a veces emite "  NN RIESGO 1 - ..." con chars corruptos
+    .replace(/^[ \t]*[A-Z]{1,2}\d?[ \t]+(?=[A-ZÁÉÍÓÚ])/gm, "")
+
+    // ── PASO 8: Separadores decorativos ───────────────────────
+    .replace(/^[ \t]*[─═━]{3,}[ \t]*$/gm, "---")
+
+    // ── PASO 9: Guiones largos en prosa ───────────────────────
+    .replace(/\s—\s/g, " - ")
+    .replace(/—/g,     " - ")
+
+    // ── PASO 10: Líneas que son SOLO simbolos no alfanuméricos ──
+    // Limpia líneas como "%%%%%" o "!!!!!" que no aportan contenido
+    .replace(/^[ \t]*[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\[\]#\-*>|.,:;(){}'"\/\\]+[ \t]*$/gm, "")
+
+    // ── PASO 11: Colapsar 3+ líneas en blanco a máximo 2 ──────
+    .replace(/\n{3,}/g, "\n\n");
 }
 
 // ── Parser Markdown a tokens estructurados ────────────────────
-// Devuelve array de tokens: { type, text, level, cells, header, align }
 function parseMdTokens(md) {
   const tokens = [];
-  const lines  = md.split("\n");
+
+  // Pre-normalizar antes de parsear
+  const normalized = normalizeMd(md);
+  const lines = normalized.split("\n");
   let i = 0;
 
   while (i < lines.length) {
     const raw = lines[i];
     const line = raw.trimEnd();
 
-    // --- Encabezado Setext (línea subrayada con == o --)
+    // --- Encabezado Setext (== o --)
     if (i + 1 < lines.length && /^[=]{2,}$/.test(lines[i + 1].trim())) {
       tokens.push({ type: "heading", level: 1, text: line.trim() });
       i += 2; continue;
@@ -764,16 +910,16 @@ function parseMdTokens(md) {
       i++; continue;
     }
 
-    // --- Separador horizontal ---
-    if (/^[-─*_]{3,}$/.test(line.trim())) {
+    // --- Separador horizontal (--- o ═══)
+    if (/^[-─═*_]{3,}$/.test(line.trim())) {
       tokens.push({ type: "hr" });
       i++; continue;
     }
 
-    // --- Tabla Markdown (detectar por |)
+    // --- Tabla Markdown
     if (line.trim().startsWith("|") && i + 1 < lines.length && /^\|[-| :]+\|/.test(lines[i + 1])) {
       const header = line.trim().split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1).map(c => c.trim());
-      i += 2; // skip separator row
+      i += 2;
       const rows = [];
       while (i < lines.length && lines[i].trim().startsWith("|")) {
         const cells = lines[i].trim().split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1).map(c => c.trim());
@@ -784,7 +930,7 @@ function parseMdTokens(md) {
       continue;
     }
 
-    // --- Lista con viñeta
+    // --- Lista con viñeta (- * + •)
     const bulletMatch = line.match(/^(\s*)[-*+]\s+(.+)/);
     if (bulletMatch) {
       const level = Math.floor(bulletMatch[1].length / 2);
@@ -813,11 +959,11 @@ function parseMdTokens(md) {
       i++; continue;
     }
 
-    // --- Código (bloque)
-    if (line.startsWith("```")) {
+    // --- Bloque de código con triple backtick
+    if (line.trimStart().startsWith("```")) {
       i++;
       const codeLines = [];
-      while (i < lines.length && !lines[i].startsWith("```")) {
+      while (i < lines.length && !lines[i].trimStart().startsWith("```")) {
         codeLines.push(lines[i]);
         i++;
       }
@@ -825,25 +971,30 @@ function parseMdTokens(md) {
       i++; continue;
     }
 
-    // --- Párrafo normal
+    // --- Párrafo normal (incluye líneas con [N] -> texto de flujo)
     tokens.push({ type: "paragraph", text: line.trim() });
     i++;
   }
   return tokens;
 }
 
-// ── Limpiar inline Markdown (negrita, cursiva, backtick, links)
+// ── Limpiar inline Markdown y símbolos decorativos ───────────
 function cleanInline(str) {
-  return str
+  if (!str) return "";
+  // Primero quitar Markdown inline
+  let s = str
     .replace(/\*\*\*(.+?)\*\*\*/g, "$1")
-    .replace(/\*\*(.+?)\*\*/g, "$1")
-    .replace(/\*(.+?)\*/g, "$1")
-    .replace(/__(.+?)__/g, "$1")
-    .replace(/_(.+?)_/g, "$1")
-    .replace(/`(.+?)`/g, "$1")
-    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
-    .replace(/~~(.+?)~~/g, "$1")
-    .trim();
+    .replace(/\*\*(.+?)\*\*/g,     "$1")
+    .replace(/\*(.+?)\*/g,         "$1")
+    .replace(/__(.+?)__/g,         "$1")
+    .replace(/_(.+?)_/g,           "$1")
+    .replace(/`(.+?)`/g,           "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g,  "$1")
+    .replace(/~~(.+?)~~/g,         "$1")
+    // Flechas de flujo residuales
+    .replace(/[ \t]*!["'][ \t]*/g, " -> ");
+  // Luego pasar por stripEmojis para limpieza completa de caracteres
+  return stripEmojis(s);
 }
 
 // ── Descargar como PDF (usando jsPDF) ─────────────────────────
@@ -930,12 +1081,12 @@ async function downloadAsPDF(markdownText, title) {
       fontSize = 10, fontStyle = "normal", color = DARK,
       indent = 0, lineH = 5.5, align = "left",
     } = opts;
+    // CRÍTICO: setear font ANTES de splitTextToSize para que jsPDF mida correctamente
     doc.setFont("helvetica", fontStyle);
     doc.setFontSize(fontSize);
     doc.setTextColor(...color);
-    // maxW ya descuenta ambos márgenes; el indent solo desplaza el origen,
-    // por eso hay que restarlo del ancho disponible para evitar overflow.
-    const avail = maxW - indent;
+    // Ancho disponible = maxW menos el indent, con 1mm de buffer de seguridad
+    const avail = maxW - indent - 1;
     const wrapped = doc.splitTextToSize(text || " ", avail);
     for (const wl of wrapped) {
       checkY(lineH);
@@ -1191,27 +1342,10 @@ async function downloadAsPDF(markdownText, title) {
 
 // ── Descargar como Word (.docx usando docx.js) ────────────────
 async function downloadAsWord(markdownText, title) {
-  // ── Cargar librería docx con fallback de CDN ─────────────────
-  const isDocxReady = () => typeof window.docx !== "undefined" && typeof window.docx.Document !== "undefined";
-
-  if (!isDocxReady()) {
-    const cdns = [
-      "https://unpkg.com/docx@8.5.0/build/index.js",
-      "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js",
-    ];
-    let loaded = false;
-    for (const cdn of cdns) {
-      try {
-        await loadScript(cdn);
-        if (isDocxReady()) { loaded = true; break; }
-      } catch (_) {
-        // Continuar con el siguiente CDN
-      }
-    }
-    if (!loaded) {
-      alert("No se pudo cargar la librería Word.\nVerifique su conexión a internet e intente nuevamente.");
-      return;
-    }
+  // docx.iife.js se carga como script estático — expone var global `docx`
+  if (typeof docx === "undefined" || typeof docx.Document === "undefined") {
+    alert("La librería Word no está disponible. Recargue la página e intente nuevamente.");
+    return;
   }
 
   try {
@@ -1220,7 +1354,7 @@ async function downloadAsWord(markdownText, title) {
       AlignmentType, BorderStyle, Header, Footer, PageNumber,
       Table, TableRow, TableCell, WidthType, ShadingType,
       VerticalAlign,
-    } = window.docx;
+    } = docx;
 
   const BLUE_HEX = "1B4FD8";
   const GREY_HEX = "888888";
