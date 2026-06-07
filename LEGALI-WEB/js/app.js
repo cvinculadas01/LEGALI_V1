@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// LEGALI — Lógica principal de la aplicación juan 
+// LEGALI — Lógica principal de la aplicación juan 10
 // ════════════════════════════════════════════════════════════
 
 // ── Estado global ────────────────────────────────────────────
