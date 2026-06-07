@@ -1191,22 +1191,27 @@ async function downloadAsPDF(markdownText, title) {
 
 // ── Descargar como Word (.docx usando docx.js) ────────────────
 async function downloadAsWord(markdownText, title) {
-  try {
-    // docx@8.5.0 expone la librería como window.docx
-    if (typeof window.docx === "undefined") {
-      await loadScript("https://unpkg.com/docx@8.5.0/build/index.js");
+  // ── Cargar librería docx con fallback de CDN ─────────────────
+  const isDocxReady = () => typeof window.docx !== "undefined" && typeof window.docx.Document !== "undefined";
+
+  if (!isDocxReady()) {
+    const cdns = [
+      "https://unpkg.com/docx@8.5.0/build/index.js",
+      "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js",
+    ];
+    let loaded = false;
+    for (const cdn of cdns) {
+      try {
+        await loadScript(cdn);
+        if (isDocxReady()) { loaded = true; break; }
+      } catch (_) {
+        // Continuar con el siguiente CDN
+      }
     }
-    // Segunda verificación: si unpkg falla, intentar CDN alternativo
-    if (typeof window.docx === "undefined") {
-      await loadScript("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js");
-    }
-    if (typeof window.docx === "undefined") {
-      alert("No se pudo cargar la librería Word. Verifique su conexión a internet.");
+    if (!loaded) {
+      alert("No se pudo cargar la librería Word.\nVerifique su conexión a internet e intente nuevamente.");
       return;
     }
-  } catch (e) {
-    alert("Error cargando librería Word: " + e.message);
-    return;
   }
 
   try {
@@ -1485,11 +1490,15 @@ async function downloadAsWord(markdownText, title) {
 // ── Cargador dinámico de scripts ──────────────────────────────
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s  = document.createElement("script");
-    s.src    = src;
-    s.onload = resolve;
-    s.onerror = reject;
+    // Si ya está cargado, resolver inmediatamente
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const s    = document.createElement("script");
+    s.src      = src;
+    s.onload   = () => resolve();
+    s.onerror  = () => reject(new Error(`No se pudo cargar: ${src}`));
     document.head.appendChild(s);
   });
 }
