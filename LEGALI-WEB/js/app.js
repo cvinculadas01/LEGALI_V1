@@ -43,6 +43,8 @@ function init() {
   $("sidebarToggle").addEventListener("click", () => sidebar.classList.toggle("open"));
   if (IS_ADMIN && $("btnToggleLib")) $("btnToggleLib").addEventListener("click", toggleLibraryPanel);
   loadSavedKeys();
+  // Guardar provider activo al iniciar (por si el admin no lo cambia esta sesión)
+  if (IS_ADMIN) localStorage.setItem("legali_active-provider", STATE.provider);
   autoConnectSupabase();
 }
 
@@ -118,6 +120,8 @@ function setupProviderSwitcher() {
   $("providerList").querySelectorAll(".prov-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       STATE.provider = btn.dataset.prov;
+      // Guardar provider activo para que usuario.html lo use
+      localStorage.setItem("legali_active-provider", STATE.provider);
       $("providerList").querySelectorAll(".prov-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       ["groq","anthropic","openai","google"].forEach(p => {
@@ -133,12 +137,20 @@ function loadSavedKeys() {
     const v = localStorage.getItem(`legali_${id}`);
     if (v && $(id)) $(id).value = v;
   });
+  // Restaurar provider activo guardado por el admin
+  const savedProvider = localStorage.getItem("legali_active-provider");
+  if (savedProvider && PROVIDERS_CONFIG[savedProvider]) {
+    STATE.provider = savedProvider;
+  }
 }
 ["anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
   const el = $(id);
-  if (el) el.addEventListener("change", () => {
-    if (el.value) localStorage.setItem(`legali_${id}`, el.value);
-  });
+  if (el) {
+    // "change" al salir del campo, "blur" al perder foco
+    const save = () => { if (el.value) localStorage.setItem(`legali_${id}`, el.value); };
+    el.addEventListener("change", save);
+    el.addEventListener("blur",   save);
+  }
 });
 
 // ── Supabase connect ──────────────────────────────────────────
