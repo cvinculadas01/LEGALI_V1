@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Asistente Jurídico IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/styles.css"/>
+<style>
+/* ── Estilos adicionales para vista de usuario ─────────────── */
+
+/* Barra de usuario en la parte superior del sidebar */
+.user-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(27,79,216,0.12);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 10px;
+  margin: 0 16px 8px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.user-info-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-info-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info-role {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-logout:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SIDEBAR — Vista Usuario (solo chat + áreas + nueva conv.)
+══════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="brand">
+    <div class="brand-bars"><span></span><span></span><span></span></div>
+    <div class="brand-name">LEGALI</div>
+    <div class="brand-sub">Asistente Jurídico · Colombia</div>
+  </div>
+
+  <!-- Info del usuario logueado -->
+  <div class="user-info-bar" id="userInfoBar">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div class="user-info-text">
+      <div class="user-info-name" id="userDisplayName">Usuario</div>
+      <div class="user-info-role">Usuario</div>
+    </div>
+    <button class="btn-logout" onclick="legaliLogout()" title="Cerrar sesión">⎋</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Docs de sesión -->
+  <div class="sidebar-section">
+    <label class="section-label">📎 Mis Documentos (sesión)</label>
+    <p class="section-hint">Solo visibles para ti en esta sesión</p>
+    <div class="upload-area upload-area-sm" id="sessionUploadArea">
+      <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md" style="display:none" multiple/>
+      📤 Subir documento personal
+    </div>
+    <div id="sessionDocList"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Áreas del Derecho -->
+  <div class="sidebar-section">
+    <label class="section-label">⚖️ Áreas del Derecho</label>
+    <div class="area-grid" id="areaGrid"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Nueva conversación -->
+  <button class="btn-new-chat" id="btnNewChat">🗑️ Nueva conversación</button>
+  <p class="legal-notice">⚠️ LEGALI es orientación general. No reemplaza a un abogado.</p>
+</aside>
+
+<button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════ -->
+<main id="main">
+  <div id="welcome" class="welcome">
+    <div class="welcome-logo">⚖️</div>
+    <h1>LEGALI</h1>
+    <p>Especializado en <strong>Derecho Procesal Colombiano</strong>.<br/>
+       Conectado a jurisprudencia oficial y tu biblioteca de documentos.</p>
+    <div class="suggestions" id="suggestions"></div>
+  </div>
+
+  <div id="chatHistory" class="chat-history"></div>
+
+  <div class="input-area">
+    <div id="ragIndicator" class="rag-indicator hidden"></div>
+    <div class="input-wrap">
+      <textarea id="userInput" placeholder="Consulta sobre derecho colombiano..." rows="1"></textarea>
+      <button id="sendBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- Scripts CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="js/docx.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+</script>
+
+<!-- Auth guard — PRIMERO, antes de cualquier otro script -->
+<script src="js/auth.js"></script>
+
+<script src="js/constants.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/providers.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+// ── Mostrar info del usuario en sidebar ──────────────────────
+(function initUserBar() {
+  const user = window.LEGALI_USER;
+  if (!user) return;
+
+  // Avatar con inicial del nombre
+  const initial = (user.username || 'U').charAt(0).toUpperCase();
+  document.getElementById('userAvatar').textContent = initial;
+  document.getElementById('userDisplayName').textContent = user.username;
+})();
+</script>
+</body>
+</html>
