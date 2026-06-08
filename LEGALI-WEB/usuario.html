@@ -104,68 +104,13 @@
     <label class="section-label">📎 Mis Documentos (sesión)</label>
     <p class="section-hint">Solo visibles para ti en esta sesión</p>
     <div class="upload-area upload-area-sm" id="sessionUploadArea">
-      <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md" style="display:none" multiple/>
-      📤 Subir documento personal
+      <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md,.docx" style="display:none" multiple/>
+      <span id="sessionUploadLabel">📤 Subir documento personal</span>
     </div>
     <div id="sessionDocList"></div>
   </div>
 
   <div class="divider"></div>
-
-  <div class="divider"></div>
-
-  <!-- Proveedor de IA -->
-  <div class="sidebar-section">
-    <label class="section-label">🔌 Proveedor de IA</label>
-    <div class="provider-list" id="providerList">
-      <button class="prov-btn active" data-prov="groq">⚡ Groq</button>
-      <button class="prov-btn" data-prov="anthropic">✦ Anthropic</button>
-      <button class="prov-btn" data-prov="openai">◈ OpenAI</button>
-      <button class="prov-btn" data-prov="google">🌐 Gemini</button>
-    </div>
-
-    <div class="provider-config" id="cfg-groq" style="margin-top:8px">
-      <label class="section-label">API Key</label>
-      <input type="password" id="groq-key" placeholder="gsk_..." class="key-input"/>
-      <p class="section-hint" style="margin-top:4px">
-        Gratis en <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary-light)">console.groq.com</a>
-      </p>
-      <label class="section-label" style="margin-top:8px">Modelo</label>
-      <select id="groq-model">
-        <option value="llama-3.3-70b-versatile">⚡ Llama 3.3 70B</option>
-        <option value="mixtral-8x7b-32768">✦ Mixtral 8x7B</option>
-        <option value="llama-3.1-70b-versatile">◈ Llama 3.1 70B</option>
-      </select>
-    </div>
-    <div class="provider-config hidden" id="cfg-anthropic" style="margin-top:8px">
-      <label class="section-label">API Key</label>
-      <input type="password" id="anthropic-key" placeholder="sk-ant-..." class="key-input"/>
-      <label class="section-label" style="margin-top:8px">Modelo</label>
-      <select id="anthropic-model">
-        <option value="claude-haiku-4-5-20251001">⚡ Haiku 4.5</option>
-        <option value="claude-sonnet-4-6" selected>✦ Sonnet 4.6</option>
-        <option value="claude-opus-4-6">◈ Opus 4.6</option>
-      </select>
-    </div>
-    <div class="provider-config hidden" id="cfg-openai" style="margin-top:8px">
-      <label class="section-label">API Key</label>
-      <input type="password" id="openai-key" placeholder="sk-..." class="key-input"/>
-      <label class="section-label" style="margin-top:8px">Modelo</label>
-      <select id="openai-model">
-        <option value="gpt-4o-mini">⚡ GPT-4o Mini</option>
-        <option value="gpt-4o" selected>✦ GPT-4o</option>
-      </select>
-    </div>
-    <div class="provider-config hidden" id="cfg-google" style="margin-top:8px">
-      <label class="section-label">API Key</label>
-      <input type="password" id="google-key" placeholder="AIza..." class="key-input"/>
-      <label class="section-label" style="margin-top:8px">Modelo</label>
-      <select id="google-model">
-        <option value="gemini-1.5-flash">⚡ Gemini 1.5 Flash</option>
-        <option value="gemini-1.5-pro" selected>✦ Gemini 1.5 Pro</option>
-      </select>
-    </div>
-  </div>
 
   <!-- Áreas del Derecho -->
   <div class="sidebar-section">
@@ -211,24 +156,6 @@
 </main>
 
 <!-- Scripts CDN -->
-<!-- Elementos ocultos requeridos por app.js (solo existen en index.html para admin) -->
-<div style="display:none">
-  <input id="sb-url"/><input id="sb-key"/>
-  <button id="btnConnect"></button>
-  <span id="sb-status"></span>
-  <button id="btnToggleLib"></button>
-  <div id="libraryPanel"></div>
-  <div id="libList"></div>
-  <div id="libStats"></div>
-  <div id="adminUploadArea"><span></span></div>
-  <input id="adminFileInput"/>
-  <div id="uploadMeta"></div>
-  <div id="uploadProgress"></div>
-  <button id="btnUploadConfirm"></button>
-  <button id="btnUploadCancel"></button>
-  <input id="docCategory"/>
-  <input id="docSource"/>
-</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="js/docx.iife.js"></script>
