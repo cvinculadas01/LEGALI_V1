@@ -405,85 +405,8 @@ function showInfo(msg) {
   document.getElementById('alertError').classList.remove('show');
 }
 
-// ── Login principal ──────────────────────────────────────────
-async function doLogin() {
-  clearAlerts();
-  const username = document.getElementById('inputUser').value.trim();
-  const password = document.getElementById('inputPass').value;
-  const btn      = document.getElementById('btnLogin');
 
-  if (!username || !password) {
-    showError('Por favor ingresa usuario y contraseña.');
-    return;
-  }
-
-  // Loading state
-  btn.disabled  = true;
-  btn.innerHTML = '<span class="spinner"></span>Verificando...';
-
-  try {
-    // Consultar tabla legali_users
-    const { data, error } = await sb
-      .from('legali_users')
-      .select('id, username, role, active')
-      .eq('username', username)
-      .eq('password_hash', hashSimple(password))
-      .eq('active', true)
-      .maybeSingle();
-
-    if (error || !data) {
-      showError('Usuario o contraseña incorrectos.');
-      btn.disabled  = false;
-      btn.innerHTML = 'Ingresar';
-      return;
-    }
-
-    // Verificar que el rol coincide con la pestaña seleccionada
-    if (data.role !== currentRole) {
-      const roleName = currentRole === 'admin' ? 'administrador' : 'usuario';
-      showError(`Esta cuenta no tiene acceso de ${roleName}.`);
-      btn.disabled  = false;
-      btn.innerHTML = 'Ingresar';
-      return;
-    }
-
-    // Guardar sesión en sessionStorage
-    sessionStorage.setItem('legali_user', JSON.stringify({
-      id:       data.id,
-      username: data.username,
-      role:     data.role
-    }));
-
-    showInfo('Acceso concedido. Redirigiendo...');
-
-    // Redirigir según rol
-    setTimeout(() => {
-      if (data.role === 'admin') {
-        window.location.href = 'index.html';
-      } else {
-        window.location.href = 'usuario.html';
-      }
-    }, 800);
-
-  } catch (err) {
-    showError('Error de conexión. Intenta de nuevo.');
-    console.error(err);
-    btn.disabled  = false;
-    btn.innerHTML = 'Ingresar';
-  }
-}
-
-// ── Hash simple (SHA-256 via Web Crypto API) ─────────────────
-// NOTA: En producción real usar bcrypt en el backend.
-// Para esta implementación client-side usamos SHA-256.
-async function hashSimple(str) {
-  // Implementación síncrona simple para mantener compatibilidad
-  // Se usa un hash en Base64 básico — ver auth.js para la versión async real
-  return btoa(str); // ← reemplazar con hashPassword() en producción
-}
-
-// ── Versión async correcta con SHA-256 ──────────────────────
-// Sobreescribir hashSimple con la versión real
+// ── Hash de contraseña (SHA-256 via Web Crypto API) ──────────
 async function hashPassword(password) {
   const encoder = new TextEncoder();
   const data     = encoder.encode(password);
@@ -492,7 +415,7 @@ async function hashPassword(password) {
   return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Sobreescribir doLogin para usar SHA-256 real
+// ── Login ─────────────────────────────────────────────────────
 async function doLogin() {
   clearAlerts();
   const username = document.getElementById('inputUser').value.trim();
