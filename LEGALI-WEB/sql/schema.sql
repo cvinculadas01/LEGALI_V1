@@ -72,6 +72,11 @@ CREATE TABLE IF NOT EXISTS session_documents (
 CREATE INDEX IF NOT EXISTS idx_sdocs_session
   ON session_documents(session_id);
 
+-- Índice GIN para búsqueda full-text en documentos de sesión
+CREATE INDEX IF NOT EXISTS idx_sdocs_fts
+  ON session_documents
+  USING gin(to_tsvector('spanish', immutable_unaccent(content)));
+
 -- ── Row Level Security ─────────────────────────────────────────
 ALTER TABLE conversations     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE legal_memory       ENABLE ROW LEVEL SECURITY;

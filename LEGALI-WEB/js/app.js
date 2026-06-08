@@ -645,7 +645,8 @@ async function sendMessage(text) {
     ragIndicator.classList.remove("hidden");
     ragSources.forEach(s => {
       const tag = document.createElement("span");
-      tag.className = `rag-source-tag ${s.doc_type === "biblioteca" ? "global" : "session"}`;
+      const isSession = s.doc_type === "session" || s.doc_type === "sesion" || s.doc_type === "local";
+      tag.className = `rag-source-tag ${isSession ? "session" : "global"}`;
       tag.textContent = `${s.doc_type === "biblioteca" ? "📚" : "📎"} ${s.name.slice(0, 28)}`;
       tag.title = s.name;
       ragIndicator.appendChild(tag);
@@ -663,7 +664,7 @@ async function sendMessage(text) {
   let contextBlock = "";
 
   // Separar fragmentos de docs de sesión vs biblioteca
-  const sessionSources = ragSources.filter(s => s.doc_type === "session" || s.doc_type === "local");
+  const sessionSources = ragSources.filter(s => s.doc_type === "session" || s.doc_type === "sesion" || s.doc_type === "local");
 
   if (ragSnippets) {
     if (sessionSources.length) {
