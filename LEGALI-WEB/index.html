@@ -23,7 +23,7 @@
   <!-- Proveedor -->
   <div class="sidebar-section">
     <label class="section-label">🔌 Proveedor de IA</label>
-    <p class="section-hint">Groq es gratuito — requiere tu propia API Key</p>
+    <p class="section-hint">Groq es GRATUITO y ultra-rápido</p>
     <div class="provider-list" id="providerList">
       <button class="prov-btn active" data-prov="groq">⚡ Groq (Gratuito)</button>
       <button class="prov-btn" data-prov="anthropic">✦ Anthropic</button>
@@ -33,12 +33,7 @@
   </div>
 
   <div class="provider-config" id="cfg-groq">
-    <label class="section-label">API Key</label>
-    <input type="password" id="groq-key" placeholder="gsk_..." class="key-input"/>
-    <p class="section-hint" style="margin-top:4px">
-      Obtén tu key gratis en
-      <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary-light)">console.groq.com</a>
-    </p>
+    <div class="badge badge-green">✅ API Key integrada</div>
     <label class="section-label" style="margin-top:8px">Modelo</label>
     <select id="groq-model">
       <option value="llama-3.3-70b-versatile">⚡ Llama 3.3 70B — Rápido</option>
@@ -138,8 +133,8 @@
     <label class="section-label">📎 Mis Documentos (sesión)</label>
     <p class="section-hint">Solo visibles para ti en esta sesión</p>
     <div class="upload-area upload-area-sm" id="sessionUploadArea">
-      <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md" style="display:none" multiple/>
-      📤 Subir documento personal
+      <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md,.docx" style="display:none" multiple/>
+      <span id="sessionUploadLabel">📤 Subir documento personal</span>
     </div>
     <div id="sessionDocList"></div>
   </div>

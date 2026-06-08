@@ -126,12 +126,12 @@ function setupProviderSwitcher() {
 
 // ── Keys persistidas ──────────────────────────────────────────
 function loadSavedKeys() {
-  ["groq-key","anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
+  ["anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
     const v = localStorage.getItem(`legali_${id}`);
     if (v && $(id)) $(id).value = v;
   });
 }
-["groq-key","anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
+["anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
   const el = $(id);
   if (el) el.addEventListener("change", () => {
     if (el.value) localStorage.setItem(`legali_${id}`, el.value);
@@ -377,25 +377,48 @@ function setupSessionUpload() {
 }
 
 async function processSessionFile(file) {
+  const area  = $("sessionUploadArea");
+  const label = $("sessionUploadLabel");
+  const origLabel = label ? label.innerHTML : "";
+
+  // Feedback visual: procesando
+  if (label) label.innerHTML = `⏳ Procesando ${file.name.length > 20 ? file.name.slice(0,18)+"…" : file.name}…`;
+  if (area) area.style.opacity = "0.6";
+
   let text = "";
   let pages = null;
 
-  if (file.name.toLowerCase().endsWith(".pdf")) {
-    const r = await extractPdfText(file, () => {});
-    text  = r.text;
-    pages = r.pages;
-  } else {
-    text = await file.text();
-  }
+  try {
+    if (file.name.toLowerCase().endsWith(".pdf")) {
+      const r = await extractPdfText(file, () => {});
+      text  = r.text;
+      pages = r.pages;
+    } else {
+      text = await file.text();
+    }
 
-  if (!text.trim()) { alert(`No se pudo extraer texto de ${file.name}.`); return; }
+    if (!text.trim()) {
+      alert(`No se pudo extraer texto de "${file.name}". Asegúrate de que el PDF no esté protegido o sea solo imagen.`);
+      return;
+    }
 
-  if (supabaseClient) {
-    await saveSessionDocument(STATE.sessionId, file.name, text, file.size);
-    await refreshSessionDocs();
-  } else {
-    STATE.localDocs.push({ name: file.name, content: text });
-    renderSessionDocList(STATE.localDocs.map(d => d.name));
+    if (supabaseClient) {
+      await saveSessionDocument(STATE.sessionId, file.name, text, file.size);
+      await refreshSessionDocs();
+    } else {
+      // Evitar duplicados por nombre
+      const existing = STATE.localDocs.findIndex(d => d.name === file.name);
+      if (existing !== -1) STATE.localDocs.splice(existing, 1);
+      STATE.localDocs.push({ name: file.name, content: text });
+      renderSessionDocList(STATE.localDocs.map(d => d.name));
+    }
+  } catch (err) {
+    console.error("Error procesando archivo:", err);
+    alert(`Error al procesar "${file.name}": ${err.message}`);
+  } finally {
+    // Restaurar label
+    if (label) label.innerHTML = origLabel;
+    if (area) area.style.opacity = "";
   }
 }
 
@@ -407,12 +430,36 @@ async function refreshSessionDocs() {
 function renderSessionDocList(names) {
   const list = $("sessionDocList");
   list.innerHTML = "";
-  names.forEach(name => {
+
+  if (!names.length) {
+    list.innerHTML = `<p class="session-doc-empty">Ningún documento cargado</p>`;
+    return;
+  }
+
+  names.forEach((name, idx) => {
     const div = document.createElement("div");
     div.className = "session-doc-item";
-    div.innerHTML = `<span title="${name}">📎 ${name}</span>`;
+    div.innerHTML = `
+      <span class="session-doc-name" title="${name}">📎 ${name.length > 28 ? name.slice(0,25) + "…" : name}</span>
+      <span class="session-doc-badge">activo</span>
+      <button class="session-doc-remove" title="Eliminar documento" data-idx="${idx}">×</button>
+    `;
+    div.querySelector(".session-doc-remove").addEventListener("click", () => removeSessionDoc(idx));
     list.appendChild(div);
   });
+}
+
+async function removeSessionDoc(idx) {
+  if (supabaseClient) {
+    const docs = await listSessionDocs(STATE.sessionId);
+    if (docs[idx]) {
+      await supabaseClient.from("session_documents").delete().eq("id", docs[idx].id);
+    }
+    await refreshSessionDocs();
+  } else {
+    STATE.localDocs.splice(idx, 1);
+    renderSessionDocList(STATE.localDocs.map(d => d.name));
+  }
 }
 
 // ── Extracción de texto PDF (PDF.js) ──────────────────────────
@@ -565,8 +612,8 @@ async function sendMessage(text) {
   const apiKey  = provCfg.apiKey();
   const model   = provCfg.model();
 
-  if (!apiKey) {
-    alert(`Ingresa tu API Key para ${provCfg.label} en el sidebar.\n\nGroq: https://console.groq.com/keys (gratuito)\nAnthropic: https://console.anthropic.com\nOpenAI: https://platform.openai.com\nGoogle: https://aistudio.google.com`);
+  if (!apiKey && STATE.provider !== "groq") {
+    alert(`Ingresa tu API Key para ${provCfg.label} en el sidebar.`);
     STATE.isStreaming = false;
     sendBtn.disabled  = false;
     return;
@@ -614,11 +661,21 @@ async function sendMessage(text) {
 
   // ── 3. Construir prompt enriquecido ───────────────────────
   let contextBlock = "";
-  if (ragSnippets)  contextBlock += `\n\n📄 FRAGMENTOS DE LA BASE DOCUMENTAL:\n${ragSnippets.slice(0, 4000)}`;
-  if (memCtx)       contextBlock += memCtx;
+
+  // Separar fragmentos de docs de sesión vs biblioteca
+  const sessionSources = ragSources.filter(s => s.doc_type === "session" || s.doc_type === "local");
+
+  if (ragSnippets) {
+    if (sessionSources.length) {
+      contextBlock += `\n\n📎 DOCUMENTOS PERSONALES DEL USUARIO (subidos en esta sesión — úsalos como fuente principal para responder):\n${ragSnippets.slice(0, 4000)}`;
+    } else {
+      contextBlock += `\n\n📄 FRAGMENTOS DE LA BASE DOCUMENTAL LEGAL:\n${ragSnippets.slice(0, 4000)}`;
+    }
+  }
+  if (memCtx) contextBlock += memCtx;
 
   const fullPrompt = contextBlock
-    ? `${contextBlock}\n\n---\nPREGUNTA:\n${text}`
+    ? `${contextBlock}\n\n---\nPREGUNTA DEL USUARIO:\n${text}`
     : text;
 
   const messagesForLLM = [

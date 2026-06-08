@@ -80,6 +80,28 @@ async function searchMemory(sessionId, query) {
 async function searchDocs(sessionId, query) {
   if (!supabaseClient) return { snippets: "", sources: [] };
 
+  const allSources  = [];
+  const allSnippets = [];
+
+  // ── 1. Buscar en session_documents de esta sesión ──────────
+  try {
+    const { data: sessionDocs } = await supabaseClient
+      .from("session_documents")
+      .select("id, name, content, file_size")
+      .eq("session_id", sessionId);
+
+    if (sessionDocs && sessionDocs.length) {
+      const result = searchLocalDocs(sessionDocs.map(d => ({ name: d.name, content: d.content })), query);
+      if (result.snippets) {
+        allSnippets.push(result.snippets);
+        allSources.push(...result.sources);
+      }
+    }
+  } catch (e) {
+    console.warn("Error cargando session_documents:", e);
+  }
+
+  // ── 2. Buscar en biblioteca global via RPC ──────────────────
   try {
     const { data, error } = await supabaseClient
       .rpc("search_legal_docs", {
@@ -88,25 +110,29 @@ async function searchDocs(sessionId, query) {
         max_results: 6,
       });
 
-    if (error || !data || !data.length) return { snippets: "", sources: [] };
+    if (!error && data && data.length) {
+      const libSources  = data.map(d => ({
+        name: d.name,
+        category: d.category || "Biblioteca",
+        source: d.source || null,
+        doc_type: d.doc_type || "biblioteca",
+        snippet: d.snippet,
+      }));
+      const libSnippets = data.map(d =>
+        `--- [${d.category || d.name}] ---\n${d.snippet}`
+      ).join("\n\n");
 
-    const sources = data.map(d => ({
-      name: d.name,
-      category: d.category || "Documento de sesión",
-      source: d.source || null,
-      doc_type: d.doc_type,
-      snippet: d.snippet,
-    }));
-
-    const snippets = data.map(d =>
-      `--- [${d.category || d.name}] ---\n${d.snippet}`
-    ).join("\n\n");
-
-    return { snippets, sources };
+      allSources.push(...libSources);
+      if (libSnippets) allSnippets.push(libSnippets);
+    }
   } catch (e) {
-    console.error("Error búsqueda RAG:", e);
-    return { snippets: "", sources: [] };
+    console.warn("Error búsqueda RAG biblioteca:", e);
   }
+
+  return {
+    snippets: allSnippets.join("\n\n"),
+    sources:  allSources,
+  };
 }
 
 // ── Subir documento de sesión (usuario en el chat) ──────────
@@ -170,27 +196,47 @@ async function listSessionDocs(sessionId) {
 
 function searchLocalDocs(localDocs, query) {
   if (!localDocs.length) return { snippets: "", sources: [] };
+
+  // Extraer keywords legales específicas
   const kwRegex = /(ley\s+\d+|art[íi]culo\s+\d+|decreto\s+\d+|\d{4})/gi;
-  const keywords = [...(query.matchAll(kwRegex))].map(m => m[0].toLowerCase());
+  const legalKws = [...(query.matchAll(kwRegex))].map(m => m[0].toLowerCase());
+
+  // También extraer palabras clave genéricas (palabras de más de 4 letras, sin stopwords)
+  const stopwords = new Set(["para","como","este","esta","sobre","desde","hasta","entre","tiene","cuál","cual","cómo","como","qué","que","son","los","las","del","una","uno","con","por","sin","hay","más","mas"]);
+  const genericKws = query.toLowerCase()
+    .replace(/[^\w\sáéíóúüñ]/g, "")
+    .split(/\s+/)
+    .filter(w => w.length > 4 && !stopwords.has(w));
+
+  const allKeywords = [...new Set([...legalKws, ...genericKws])];
+
   const fragments = [];
   const sources = [];
+  const SNIPPET_SIZE = 1500;
+  const CONTEXT_PAD  = 300;
 
   for (const doc of localDocs) {
-    if (!keywords.length) {
-      fragments.push(`--- [${doc.name}] ---\n${doc.content.slice(0, 1500)}`);
-      sources.push({ name: doc.name, category: "Local", doc_type: "local" });
-      break;
+    const lower = doc.content.toLowerCase();
+    let bestIdx = -1;
+
+    // Buscar la primera keyword que aparezca en el documento
+    for (const kw of allKeywords) {
+      const idx = lower.indexOf(kw);
+      if (idx !== -1) { bestIdx = idx; break; }
     }
-    for (const kw of keywords) {
-      const idx = doc.content.toLowerCase().indexOf(kw);
-      if (idx !== -1) {
-        const start = Math.max(0, idx - 300);
-        const end   = Math.min(doc.content.length, idx + 1500);
-        fragments.push(`--- [${doc.name}] ---\n${doc.content.slice(start, end)}`);
-        sources.push({ name: doc.name, category: "Local", doc_type: "local" });
-        break;
-      }
+
+    if (bestIdx !== -1) {
+      // Encontró una coincidencia – extraer fragmento con contexto
+      const start = Math.max(0, bestIdx - CONTEXT_PAD);
+      const end   = Math.min(doc.content.length, bestIdx + SNIPPET_SIZE);
+      fragments.push(`--- [${doc.name}] ---\n${doc.content.slice(start, end)}`);
+    } else {
+      // Sin coincidencia directa – incluir inicio del documento como contexto general
+      fragments.push(`--- [${doc.name}] ---\n${doc.content.slice(0, SNIPPET_SIZE)}`);
     }
+
+    sources.push({ name: doc.name, category: "Documento de sesión", doc_type: "session" });
   }
+
   return { snippets: fragments.join("\n\n"), sources };
 }
