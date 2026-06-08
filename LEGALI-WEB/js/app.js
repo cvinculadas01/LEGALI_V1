@@ -405,21 +405,11 @@ async function processSessionFile(file) {
       return;
     }
 
-    // Guardar siempre en memoria local (funciona sin Supabase)
+    // Docs de sesión siempre en memoria (son temporales, Supabase no es necesario)
     const existing = STATE.localDocs.findIndex(d => d.name === file.name);
     if (existing !== -1) STATE.localDocs.splice(existing, 1);
     STATE.localDocs.push({ name: file.name, content: text });
-
-    if (supabaseClient) {
-      // Intentar persistir en Supabase; si falla, el doc igual queda en memoria
-      const saved = await saveSessionDocument(STATE.sessionId, file.name, text, file.size);
-      if (!saved) {
-        console.warn("Supabase INSERT falló — documento disponible solo en memoria de esta sesión");
-      }
-      await refreshSessionDocs();
-    } else {
-      renderSessionDocList(STATE.localDocs.map(d => d.name));
-    }
+    await refreshSessionDocs();
   } catch (err) {
     console.error("Error procesando archivo:", err);
     alert(`Error al procesar "${file.name}": ${err.message}`);
@@ -431,15 +421,9 @@ async function processSessionFile(file) {
 }
 
 async function refreshSessionDocs() {
-  // Supabase docs
-  const remoteDocs = supabaseClient ? await listSessionDocs(STATE.sessionId) : [];
-  const remoteNames = remoteDocs.map(d => d.name);
-
-  // Fusionar con docs locales en memoria (evitar duplicados)
-  const localNames = STATE.localDocs.map(d => d.name).filter(n => !remoteNames.includes(n));
-  const allNames = [...remoteNames, ...localNames];
-
-  renderSessionDocList(allNames);
+  // Los docs de sesión viven solo en memoria (STATE.localDocs)
+  // Son temporales por diseño — se limpian al cambiar de chat
+  renderSessionDocList(STATE.localDocs.map(d => d.name));
 }
 
 function renderSessionDocList(names) {
