@@ -28,17 +28,20 @@ const sidebar        = $("sidebar");
 const ragIndicator   = $("ragIndicator");
 
 // ── Init ─────────────────────────────────────────────────────
+// Detectar si estamos en vista admin o usuario
+const IS_ADMIN = !!document.getElementById("btnToggleLib");
+
 function init() {
   buildSuggestions();
   buildAreas();
-  setupProviderSwitcher();
+  if (IS_ADMIN) setupProviderSwitcher();
   setupInput();
-  setupSupabaseConnect();
-  setupLibraryUpload();
+  if (IS_ADMIN) setupSupabaseConnect();
+  if (IS_ADMIN) setupLibraryUpload();
   setupSessionUpload();
   setupNewChat();
   $("sidebarToggle").addEventListener("click", () => sidebar.classList.toggle("open"));
-  $("btnToggleLib").addEventListener("click", toggleLibraryPanel);
+  if (IS_ADMIN && $("btnToggleLib")) $("btnToggleLib").addEventListener("click", toggleLibraryPanel);
   loadSavedKeys();
   autoConnectSupabase();
 }
@@ -51,11 +54,11 @@ async function autoConnectSupabase() {
 
   if (!url || !key || key.includes("REEMPLAZA")) return;
 
-  // Rellenar campos visualmente
-  $("sb-url").value = url;
-  $("sb-key").value = key;
+  // Rellenar campos visualmente (solo en vista admin)
+  if ($("sb-url")) $("sb-url").value = url;
+  if ($("sb-key")) $("sb-key").value = key;
 
-  sbStatus.innerHTML = '<span style="color:#5A9AE0">Conectando…</span>';
+  if (sbStatus) sbStatus.innerHTML = '<span style="color:#5A9AE0">Conectando…</span>';
 
   const result = await connectSupabase(url, key);
 
@@ -64,7 +67,7 @@ async function autoConnectSupabase() {
     localStorage.setItem("legali_sb-url", url);
     localStorage.setItem("legali_sb-key", key);
 
-    sbStatus.innerHTML = '<span style="color:#2DD4A4">✅ Conectado automáticamente</span>';
+    if (sbStatus) sbStatus.innerHTML = '<span style="color:#2DD4A4">✅ Conectado automáticamente</span>';
 
     // Cargar historial previo
     const history = await loadConversation(STATE.sessionId);
@@ -78,7 +81,7 @@ async function autoConnectSupabase() {
     await refreshLibrary();
     await refreshSessionDocs();
   } else {
-    sbStatus.innerHTML = '<span style="color:#F87171">⚠️ Error de conexión — revisa tus credenciales</span>';
+    if (sbStatus) sbStatus.innerHTML = '<span style="color:#F87171">⚠️ Error de conexión — revisa tus credenciales</span>';
   }
 }
 
@@ -402,14 +405,19 @@ async function processSessionFile(file) {
       return;
     }
 
+    // Guardar siempre en memoria local (funciona sin Supabase)
+    const existing = STATE.localDocs.findIndex(d => d.name === file.name);
+    if (existing !== -1) STATE.localDocs.splice(existing, 1);
+    STATE.localDocs.push({ name: file.name, content: text });
+
     if (supabaseClient) {
-      await saveSessionDocument(STATE.sessionId, file.name, text, file.size);
+      // Intentar persistir en Supabase; si falla, el doc igual queda en memoria
+      const saved = await saveSessionDocument(STATE.sessionId, file.name, text, file.size);
+      if (!saved) {
+        console.warn("Supabase INSERT falló — documento disponible solo en memoria de esta sesión");
+      }
       await refreshSessionDocs();
     } else {
-      // Evitar duplicados por nombre
-      const existing = STATE.localDocs.findIndex(d => d.name === file.name);
-      if (existing !== -1) STATE.localDocs.splice(existing, 1);
-      STATE.localDocs.push({ name: file.name, content: text });
       renderSessionDocList(STATE.localDocs.map(d => d.name));
     }
   } catch (err) {
@@ -423,8 +431,15 @@ async function processSessionFile(file) {
 }
 
 async function refreshSessionDocs() {
-  const docs = await listSessionDocs(STATE.sessionId);
-  renderSessionDocList(docs.map(d => d.name));
+  // Supabase docs
+  const remoteDocs = supabaseClient ? await listSessionDocs(STATE.sessionId) : [];
+  const remoteNames = remoteDocs.map(d => d.name);
+
+  // Fusionar con docs locales en memoria (evitar duplicados)
+  const localNames = STATE.localDocs.map(d => d.name).filter(n => !remoteNames.includes(n));
+  const allNames = [...remoteNames, ...localNames];
+
+  renderSessionDocList(allNames);
 }
 
 function renderSessionDocList(names) {
@@ -529,7 +544,7 @@ function setupNewChat() {
     chatHistory.innerHTML = "";
     welcome.style.display = "flex";
     ragIndicator.classList.add("hidden");
-    $("sessionDocList").innerHTML = "";
+    renderSessionDocList([]);  // limpia lista y muestra "Ningún documento"
   });
 }
 
@@ -630,14 +645,22 @@ async function sendMessage(text) {
   let ragSnippets = "";
   let ragSources  = [];
 
+  // Buscar siempre en localDocs (docs en memoria, disponibles sin importar Supabase)
+  if (STATE.localDocs.length) {
+    const localResult = searchLocalDocs(STATE.localDocs, text);
+    ragSnippets += localResult.snippets;
+    ragSources.push(...localResult.sources);
+  }
+
+  // Buscar también en Supabase (biblioteca global + session_documents persistidos)
   if (supabaseClient) {
     const result = await searchDocs(STATE.sessionId, text);
-    ragSnippets = result.snippets;
-    ragSources  = result.sources;
-  } else if (STATE.localDocs.length) {
-    const result = searchLocalDocs(STATE.localDocs, text);
-    ragSnippets = result.snippets;
-    ragSources  = result.sources;
+    // Añadir solo fuentes que no estén ya en localDocs (evitar duplicados)
+    const localNames = new Set(STATE.localDocs.map(d => d.name));
+    const newSnippets = result.snippets;
+    const newSources  = result.sources.filter(s => !localNames.has(s.name));
+    if (newSnippets) ragSnippets += (ragSnippets ? "\n\n" : "") + newSnippets;
+    ragSources.push(...newSources);
   }
 
   // Mostrar fuentes encontradas sobre el input
