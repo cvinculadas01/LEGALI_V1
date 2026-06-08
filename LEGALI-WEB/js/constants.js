@@ -73,29 +73,29 @@ const AREAS = [
 ];
 
 // ── Modelos por proveedor ───────────────────────────────────
-const GROQ_API_KEY = "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";
-// NOTA: en producción mueve esta key a una variable de entorno o a un backend proxy.
+// ⚠️ NUNCA pongas API Keys aquí. El usuario las ingresa en el sidebar.
+// Para obtener una key de Groq: https://console.groq.com/keys
 
 const PROVIDERS_CONFIG = {
   groq: {
     label: "Groq",
-    apiKey: () => GROQ_API_KEY,
-    model: () => document.getElementById("groq-model").value,
+    apiKey: () => document.getElementById("groq-key").value.trim(),
+    model:  () => document.getElementById("groq-model").value,
   },
   anthropic: {
     label: "Anthropic",
     apiKey: () => document.getElementById("anthropic-key").value.trim(),
-    model: () => document.getElementById("anthropic-model").value,
+    model:  () => document.getElementById("anthropic-model").value,
   },
   openai: {
     label: "OpenAI",
     apiKey: () => document.getElementById("openai-key").value.trim(),
-    model: () => document.getElementById("openai-model").value,
+    model:  () => document.getElementById("openai-model").value,
   },
   google: {
     label: "Google Gemini",
     apiKey: () => document.getElementById("google-key").value.trim(),
-    model: () => document.getElementById("google-model").value,
+    model:  () => document.getElementById("google-model").value,
   },
 };
 
@@ -110,6 +110,8 @@ const LEGAL_DOMAINS = [
   "procesal.uexternado.edu.co",
 ];
 
-// ──────────────── Credenciales Supabase ───────────────────────────
+// ── Credenciales Supabase ───────────────────────────────────
+// Estas son seguras de dejar aquí: SUPABASE_KEY es la anon/public key,
+// diseñada para estar en el frontend. La seguridad real viene de RLS en Supabase.
 const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";

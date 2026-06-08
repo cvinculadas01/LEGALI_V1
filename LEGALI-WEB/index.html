@@ -23,7 +23,7 @@
   <!-- Proveedor -->
   <div class="sidebar-section">
     <label class="section-label">🔌 Proveedor de IA</label>
-    <p class="section-hint">Groq es GRATUITO y ultra-rápido</p>
+    <p class="section-hint">Groq es gratuito — requiere tu propia API Key</p>
     <div class="provider-list" id="providerList">
       <button class="prov-btn active" data-prov="groq">⚡ Groq (Gratuito)</button>
       <button class="prov-btn" data-prov="anthropic">✦ Anthropic</button>
@@ -33,7 +33,12 @@
   </div>
 
   <div class="provider-config" id="cfg-groq">
-    <div class="badge badge-green">✅ API Key integrada</div>
+    <label class="section-label">API Key</label>
+    <input type="password" id="groq-key" placeholder="gsk_..." class="key-input"/>
+    <p class="section-hint" style="margin-top:4px">
+      Obtén tu key gratis en
+      <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--primary-light)">console.groq.com</a>
+    </p>
     <label class="section-label" style="margin-top:8px">Modelo</label>
     <select id="groq-model">
       <option value="llama-3.3-70b-versatile">⚡ Llama 3.3 70B — Rápido</option>

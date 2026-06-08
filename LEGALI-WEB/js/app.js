@@ -126,12 +126,12 @@ function setupProviderSwitcher() {
 
 // ── Keys persistidas ──────────────────────────────────────────
 function loadSavedKeys() {
-  ["anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
+  ["groq-key","anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
     const v = localStorage.getItem(`legali_${id}`);
     if (v && $(id)) $(id).value = v;
   });
 }
-["anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
+["groq-key","anthropic-key","openai-key","google-key","sb-url","sb-key"].forEach(id => {
   const el = $(id);
   if (el) el.addEventListener("change", () => {
     if (el.value) localStorage.setItem(`legali_${id}`, el.value);
@@ -565,8 +565,8 @@ async function sendMessage(text) {
   const apiKey  = provCfg.apiKey();
   const model   = provCfg.model();
 
-  if (!apiKey && STATE.provider !== "groq") {
-    alert(`Ingresa tu API Key para ${provCfg.label} en el sidebar.`);
+  if (!apiKey) {
+    alert(`Ingresa tu API Key para ${provCfg.label} en el sidebar.\n\nGroq: https://console.groq.com/keys (gratuito)\nAnthropic: https://console.anthropic.com\nOpenAI: https://platform.openai.com\nGoogle: https://aistudio.google.com`);
     STATE.isStreaming = false;
     sendBtn.disabled  = false;
     return;
