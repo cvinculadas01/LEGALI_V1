@@ -76,26 +76,38 @@ const AREAS = [
 // ⚠️ NUNCA pongas API Keys aquí. El usuario las ingresa en el sidebar.
 // Para obtener una key de Groq: https://console.groq.com/keys
 
+// Helper: leer input del DOM si existe, si no usar localStorage (funciona en usuario.html sin panel)
+function _getInputVal(id, lsKey, fallback) {
+  const el = document.getElementById(id);
+  if (el) return el.value.trim();
+  return localStorage.getItem(lsKey) || fallback || "";
+}
+function _getSelectVal(id, fallback) {
+  const el = document.getElementById(id);
+  if (el) return el.value;
+  return fallback;
+}
+
 const PROVIDERS_CONFIG = {
   groq: {
     label: "Groq",
-    apiKey: () => document.getElementById("groq-key").value.trim(),
-    model:  () => document.getElementById("groq-model").value,
+    apiKey: () => _getInputVal("groq-key",      "legali_groq-key",      ""),
+    model:  () => _getSelectVal("groq-model",   "llama-3.3-70b-versatile"),
   },
   anthropic: {
     label: "Anthropic",
-    apiKey: () => document.getElementById("anthropic-key").value.trim(),
-    model:  () => document.getElementById("anthropic-model").value,
+    apiKey: () => _getInputVal("anthropic-key", "legali_anthropic-key", ""),
+    model:  () => _getSelectVal("anthropic-model", "claude-sonnet-4-20250514"),
   },
   openai: {
     label: "OpenAI",
-    apiKey: () => document.getElementById("openai-key").value.trim(),
-    model:  () => document.getElementById("openai-model").value,
+    apiKey: () => _getInputVal("openai-key",    "legali_openai-key",    ""),
+    model:  () => _getSelectVal("openai-model", "gpt-4o-mini"),
   },
   google: {
     label: "Google Gemini",
-    apiKey: () => document.getElementById("google-key").value.trim(),
-    model:  () => document.getElementById("google-model").value,
+    apiKey: () => _getInputVal("google-key",    "legali_google-key",    ""),
+    model:  () => _getSelectVal("google-model", "gemini-2.0-flash"),
   },
 };
 

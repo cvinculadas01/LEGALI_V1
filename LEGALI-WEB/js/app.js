@@ -185,9 +185,10 @@ function toggleLibraryPanel() {
 
 async function refreshLibrary() {
   if (!supabaseClient) return;
-  const docs = await listLibraryDocs();
   const libList  = $("libList");
   const libStats = $("libStats");
+  if (!libList || !libStats) return;  // no existe en vista usuario
+  const docs = await listLibraryDocs();
   libList.innerHTML = "";
 
   if (docs.length === 0) {
