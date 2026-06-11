@@ -6,8 +6,8 @@
 'use strict';
 
 // ── Supabase ──────────────────────────────────────────────────
-const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_sHvriOKj2t58aApfn9kCSw_U5gAVn-v";
+const SUPABASE_URL = "https://gunfflxviwauixdymsfk.supabase.co";
+const SUPABASE_ANON_KEY = "";
 const AI_PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy`;
 
 // ── Planes y cuotas ───────────────────────────────────────────
