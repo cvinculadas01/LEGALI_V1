@@ -971,7 +971,7 @@ let allLibDocs = [], pendingLibFiles = [];
 
 async function loadLibrary() {
   const { data } = await sb.from('legal_documents')
-    .select('id, name, category, source, pages, file_size, created_at')
+    .select('id, title, category, source, content, created_at')
     .order('created_at', { ascending: false });
   allLibDocs = data || [];
   renderLibDocs(allLibDocs);
@@ -985,19 +985,19 @@ function renderLibDocs(docs) {
   }
   tbody.innerHTML = docs.map(d => `
     <tr>
-      <td><strong>${d.name}</strong>${d.source ? `<br/><a href="${d.source}" target="_blank" style="font-size:11px;color:var(--primary-light)">Ver fuente</a>` : ''}</td>
+      <td><strong>${d.title}</strong>${d.source ? `<br/><a href="${d.source}" target="_blank" style="font-size:11px;color:var(--primary-light)">Ver fuente</a>` : ''}</td>
       <td><span class="badge badge-blue">${d.category || 'General'}</span></td>
-      <td>${d.pages || '—'}</td>
-      <td>${d.file_size ? (d.file_size / 1024).toFixed(0) + ' KB' : '—'}</td>
+      <td>—</td>
+      <td>${d.content ? (d.content.length / 1024).toFixed(0) + ' KB' : '—'}</td>
       <td>${fmtDate(d.created_at)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteLibDoc('${d.id}', '${d.name.replace(/'/g,"\\'")}')">🗑️</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteLibDoc('${d.id}', '${d.title.replace(/'/g,"\\'")}')">🗑️</button></td>
     </tr>
   `).join('');
 }
 
 function filterLibDocs() {
   const q = document.getElementById('libSearch').value.toLowerCase();
-  renderLibDocs(allLibDocs.filter(d => d.name.toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q)));
+  renderLibDocs(allLibDocs.filter(d => d.title.toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q)));
 }
 
 function handleLibDrop(e) {
@@ -1039,9 +1039,8 @@ async function uploadLibDocs() {
       if (!content.trim()) { text.textContent = `⚠️ Sin texto extraíble: ${file.name}`; continue; }
 
       const { error } = await sb.from('legal_documents').insert({
-        name: file.name.replace(/\.[^.]+$/, ''),
+        title: file.name.replace(/\.[^.]+$/, ''),
         content, category, source: source || null,
-        file_size: file.size,
       });
       if (error) throw error;
     } catch (e) {
