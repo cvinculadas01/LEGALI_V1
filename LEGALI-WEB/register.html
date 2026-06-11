@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Crear cuenta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1B4FD8; --primary-light: #3B82F6; --primary-glow: rgba(59,130,246,0.18);
+  --sidebar-bg: #0A1628; --bg: #F0F4FC; --card: #FFFFFF; --text: #0F2545;
+  --text-soft: #4A6080; --text-muted: #8899AA; --border: #D4E0F0;
+  --gold: #C8960A; --gold-light: #F5C842; --green: #0D9E6C; --red: #DC2626;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(27,79,216,0.10);
+  --shadow-lg: 0 8px 40px rgba(27,79,216,0.16);
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+}
+html, body { height: 100%; font-family: var(--font-body); background: var(--sidebar-bg); color: var(--text); overflow-x: hidden; }
+
+.bg-pattern {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(27,79,216,0.18) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 80% 60%, rgba(200,150,10,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.page-wrap {
+  position: relative; z-index: 1; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 20px 60px;
+}
+
+.brand-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 32px;
+}
+.brand-icon { font-size: 28px; }
+.brand-name {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  color: #fff; letter-spacing: 2px;
+}
+.brand-sub { font-size: 12px; color: #5A7AA8; letter-spacing: 1px; }
+
+/* ── Steps indicator ── */
+.steps {
+  display: flex; align-items: center; gap: 0; margin-bottom: 36px;
+}
+.step-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #5A7AA8;
+  transition: all .3s;
+}
+.step-dot.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.step-dot.done { background: var(--green); border-color: var(--green); color: #fff; }
+.step-line { width: 60px; height: 1px; background: rgba(255,255,255,0.1); }
+.step-label {
+  position: absolute; top: 38px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: #5A7AA8; white-space: nowrap;
+}
+.step-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
+
+/* ── Card ── */
+.reg-card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 560px;
+  padding: 36px 40px;
+}
+.card-title {
+  font-family: var(--font-display); font-size: 20px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+}
+.card-sub { font-size: 14px; color: var(--text-soft); margin-bottom: 28px; }
+
+/* ── Form ── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { margin-bottom: 18px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.form-input {
+  width: 100%; height: 44px; padding: 0 14px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 14px; color: var(--text);
+  background: #fff; transition: border-color .2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--primary); }
+.form-input.error { border-color: var(--red); }
+.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.form-hint.err { color: var(--red); }
+
+/* ── Planes ── */
+.plans-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.plan-card {
+  border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 20px; cursor: pointer; transition: all .2s; position: relative;
+}
+.plan-card:hover { border-color: var(--primary-light); }
+.plan-card.selected { border-color: var(--primary); background: rgba(27,79,216,0.04); }
+.plan-card.popular { border-color: var(--gold); }
+.plan-card.popular.selected { background: rgba(200,150,10,0.04); }
+.popular-badge {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: #fff; font-size: 10px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px;
+}
+.plan-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.plan-price { font-size: 26px; font-weight: 700; color: var(--primary); }
+.plan-price span { font-size: 13px; font-weight: 400; color: var(--text-soft); }
+.plan-features { margin-top: 12px; list-style: none; }
+.plan-features li {
+  font-size: 12px; color: var(--text-soft); padding: 3px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.plan-features li::before { content: "✓"; color: var(--green); font-weight: 700; }
+.plan-check {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border); position: absolute; top: 14px; right: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.plan-card.selected .plan-check { background: var(--primary); border-color: var(--primary); }
+.plan-card.popular.selected .plan-check { background: var(--gold); border-color: var(--gold); }
+.plan-check::after { content: "✓"; color: #fff; font-size: 11px; font-weight: 700; opacity: 0; }
+.plan-card.selected .plan-check::after { opacity: 1; }
+
+/* ── Botones ── */
+.btn-primary {
+  width: 100%; height: 48px; border: none; border-radius: var(--radius-sm);
+  background: var(--primary); color: #fff; font-family: var(--font-body);
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary:hover:not(:disabled) { background: #1540B0; }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-secondary {
+  width: 100%; height: 44px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-soft); font-family: var(--font-body);
+  font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; margin-top: 10px;
+}
+.btn-secondary:hover { border-color: var(--primary-light); color: var(--primary); }
+
+.spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Alertas ── */
+.alert {
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; margin-bottom: 16px; display: none;
+}
+.alert.show { display: block; }
+.alert-error { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.alert-success { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+.alert-info { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+
+/* ── Divider ── */
+.divider { text-align: center; color: var(--text-muted); font-size: 13px; margin: 20px 0; position: relative; }
+.divider::before, .divider::after {
+  content: ""; position: absolute; top: 50%;
+  width: calc(50% - 30px); height: 1px; background: var(--border);
+}
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
+.login-link { text-align: center; font-size: 13px; color: var(--text-soft); margin-top: 20px; }
+.login-link a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.login-link a:hover { text-decoration: underline; }
+
+/* Paso de confirmación */
+.confirm-icon { font-size: 56px; text-align: center; margin-bottom: 16px; }
+.confirm-title { font-size: 22px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 8px; }
+.confirm-sub { font-size: 14px; color: var(--text-soft); text-align: center; margin-bottom: 24px; }
+.confirm-details {
+  background: var(--bg); border-radius: var(--radius-sm);
+  padding: 16px; margin-bottom: 24px;
+}
+.confirm-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.confirm-row:last-child { border: none; }
+.confirm-row .cr-lbl { color: var(--text-soft); }
+.confirm-row .cr-val { font-weight: 600; color: var(--text); }
+
+/* Paso invisible */
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+
+@media (max-width: 600px) {
+  .reg-card { padding: 24px 20px; }
+  .form-row { grid-template-columns: 1fr; }
+  .plans-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="bg-grid"></div>
+
+<div class="page-wrap">
+  <!-- Brand -->
+  <div class="brand-row">
+    <span class="brand-icon">⚖️</span>
+    <div>
+      <div class="brand-name">LEGALI</div>
+      <div class="brand-sub">Asistente Jurídico · Colombia</div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps" id="stepsIndicator">
+    <div class="step-wrap">
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-label">Cuenta</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-wrap">
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-label">Plan</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-wrap">
+      <div class="step-dot" id="dot3">3</div>
+      <div class="step-label">Listo</div>
+    </div>
+  </div>
+
+  <!-- PASO 1: Datos de cuenta -->
+  <div class="reg-card step-panel active" id="step1">
+    <div class="card-title">Crear tu cuenta</div>
+    <div class="card-sub">Acceso al asistente jurídico especializado en Derecho Procesal Colombiano</div>
+
+    <div class="alert alert-error" id="err1"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" id="inputNombre" class="form-input" placeholder="Juan"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apellido</label>
+        <input type="text" id="inputApellido" class="form-input" placeholder="Pérez"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="inputEmail" class="form-input" placeholder="juan@despacho.com"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="inputPass" class="form-input" placeholder="Mínimo 8 caracteres"/>
+        <div class="form-hint">Mínimo 8 caracteres, incluye una letra y un número</div>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" id="inputPass2" class="form-input" placeholder="Repite tu contraseña"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Profesión / Rol</label>
+        <select id="inputProfesion" class="form-input">
+          <option value="">Seleccionar...</option>
+          <option value="abogado">Abogado(a)</option>
+          <option value="estudiante">Estudiante de Derecho</option>
+          <option value="juez">Juez / Magistrado</option>
+          <option value="fiscal">Fiscal</option>
+          <option value="empresa">Empresa / Corporativo</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btnStep1" onclick="goStep2()">
+      Continuar — Elegir plan
+    </button>
+    <div class="login-link">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></div>
+  </div>
+
+  <!-- PASO 2: Elegir plan -->
+  <div class="reg-card step-panel" id="step2" style="max-width:760px;">
+    <div class="card-title">Elige tu plan</div>
+    <div class="card-sub">Puedes cambiar o cancelar en cualquier momento</div>
+
+    <div class="alert alert-error" id="err2"></div>
+
+    <div class="plans-grid">
+      <div class="plan-card" id="plan-gratis" onclick="selectPlan('gratis')">
+        <div class="plan-check"></div>
+        <div class="plan-name">Gratis</div>
+        <div class="plan-price">$0 <span>/ mes</span></div>
+        <ul class="plan-features">
+          <li>5 consultas al mes</li>
+          <li>IA: Groq (rápido)</li>
+          <li>Historial de sesión</li>
+          <li>Sin exportar PDF/Word</li>
+        </ul>
+      </div>
+      <div class="plan-card" id="plan-consultorio" onclick="selectPlan('consultorio')">
+        <div class="plan-check"></div>
+        <div class="plan-name">Consultorio</div>
+        <div class="plan-price">$9 <span>USD / mes</span></div>
+        <ul class="plan-features">
+          <li>50 consultas al mes</li>
+          <li>IA: GPT-4o mini</li>
+          <li>Exportar PDF y Word</li>
+          <li>Historial 30 días</li>
+          <li>Subir documentos (2 MB)</li>
+        </ul>
+      </div>
+      <div class="plan-card popular" id="plan-profesional" onclick="selectPlan('profesional')">
+        <div class="popular-badge">Más popular</div>
+        <div class="plan-check"></div>
+        <div class="plan-name">Profesional</div>
+        <div class="plan-price">$25 <span>USD / mes</span></div>
+        <ul class="plan-features">
+          <li>200 consultas al mes</li>
+          <li>IA: Claude Sonnet</li>
+          <li>Exportar PDF y Word</li>
+          <li>Historial 90 días</li>
+          <li>Subir documentos (10 MB)</li>
+          <li>RAG sobre tu biblioteca</li>
+        </ul>
+      </div>
+      <div class="plan-card" id="plan-firma" onclick="selectPlan('firma')">
+        <div class="plan-check"></div>
+        <div class="plan-name">Firma / Juzgado</div>
+        <div class="plan-price">$79 <span>USD / mes</span></div>
+        <ul class="plan-features">
+          <li>Consultas ilimitadas</li>
+          <li>IA: Claude Opus</li>
+          <li>Todo lo anterior</li>
+          <li>Documentos (100 MB)</li>
+          <li>Historial indefinido</li>
+          <li>Soporte prioritario</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="paymentNote" class="alert alert-info show" style="margin-bottom:16px">
+      Los planes de pago se activarán vía Wompi/MercadoPago. Por ahora puedes registrarte en Gratis y actualizar desde tu perfil.
+    </div>
+
+    <button class="btn-primary" id="btnStep2" onclick="doRegister()">
+      Crear cuenta
+    </button>
+    <button class="btn-secondary" onclick="goStep1()">← Volver</button>
+  </div>
+
+  <!-- PASO 3: Confirmación -->
+  <div class="reg-card step-panel" id="step3">
+    <div class="confirm-icon">🎉</div>
+    <div class="confirm-title">¡Cuenta creada!</div>
+    <div class="confirm-sub">Te enviamos un correo de confirmación. Revisa tu bandeja de entrada.</div>
+
+    <div class="confirm-details">
+      <div class="confirm-row">
+        <span class="cr-lbl">Cuenta</span>
+        <span class="cr-val" id="confEmail">—</span>
+      </div>
+      <div class="confirm-row">
+        <span class="cr-lbl">Plan</span>
+        <span class="cr-val" id="confPlan">—</span>
+      </div>
+      <div class="confirm-row">
+        <span class="cr-lbl">Consultas disponibles</span>
+        <span class="cr-val" id="confQuota">—</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="window.location.href='login.html'">
+      Ir al inicio de sesión
+    </button>
+  </div>
+</div>
+
+<script>
+// ── Supabase init ────────────────────────────────────────────
+const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Estado ───────────────────────────────────────────────────
+let selectedPlan = 'gratis';
+selectPlan('gratis');
+
+const PLAN_CONFIG = {
+  gratis:       { label: 'Gratis',          quota: 5,   price: 0,  provider: 'groq' },
+  consultorio:  { label: 'Consultorio',     quota: 50,  price: 9,  provider: 'openai' },
+  profesional:  { label: 'Profesional',     quota: 200, price: 25, provider: 'anthropic' },
+  firma:        { label: 'Firma / Juzgado', quota: 9999,price: 79, provider: 'anthropic' },
+};
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('plan-' + plan);
+  if (el) el.classList.add('selected');
+}
+
+// ── Navegación entre pasos ───────────────────────────────────
+function setStep(n) {
+  [1, 2, 3].forEach(i => {
+    document.getElementById('step' + i).classList.toggle('active', i === n);
+    const dot = document.getElementById('dot' + i);
+    dot.classList.remove('active', 'done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+  });
+}
+
+function goStep1() { setStep(1); }
+
+function goStep2() {
+  const nombre   = document.getElementById('inputNombre').value.trim();
+  const apellido = document.getElementById('inputApellido').value.trim();
+  const email    = document.getElementById('inputEmail').value.trim();
+  const pass     = document.getElementById('inputPass').value;
+  const pass2    = document.getElementById('inputPass2').value;
+  const err      = document.getElementById('err1');
+
+  if (!nombre || !apellido) return showAlert(err, 'Ingresa tu nombre y apellido.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert(err, 'Correo electrónico inválido.');
+  if (pass.length < 8) return showAlert(err, 'La contraseña debe tener mínimo 8 caracteres.');
+  if (!/[a-zA-Z]/.test(pass) || !/[0-9]/.test(pass)) return showAlert(err, 'La contraseña debe incluir letras y números.');
+  if (pass !== pass2) return showAlert(err, 'Las contraseñas no coinciden.');
+
+  err.classList.remove('show');
+  setStep(2);
+}
+
+// ── Registro ─────────────────────────────────────────────────
+async function doRegister() {
+  const email    = document.getElementById('inputEmail').value.trim();
+  const pass     = document.getElementById('inputPass').value;
+  const nombre   = document.getElementById('inputNombre').value.trim();
+  const apellido = document.getElementById('inputApellido').value.trim();
+  const profesion = document.getElementById('inputProfesion').value;
+  const btn      = document.getElementById('btnStep2');
+  const err      = document.getElementById('err2');
+  const plan     = PLAN_CONFIG[selectedPlan];
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creando cuenta...';
+
+  try {
+    // 1. Crear usuario en Supabase Auth
+    const { data: authData, error: authError } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          nombre,
+          apellido,
+          profesion,
+          plan: selectedPlan,
+        }
+      }
+    });
+
+    if (authError) throw authError;
+
+    const userId = authData.user?.id;
+    if (!userId) throw new Error('No se pudo crear el usuario.');
+
+    // 2. Insertar perfil en tabla legali_profiles
+    const { error: profileError } = await sb.from('legali_profiles').insert({
+      id: userId,
+      nombre,
+      apellido,
+      email,
+      profesion: profesion || null,
+      plan: selectedPlan,
+      plan_label: plan.label,
+      provider_assigned: plan.provider,
+      quota_total: plan.quota,
+      quota_used: 0,
+      active: true,
+    });
+
+    if (profileError) {
+      // No bloquear si ya existe (el trigger puede haberlo creado)
+      if (!profileError.message.includes('duplicate') && !profileError.message.includes('already exists')) {
+        console.warn('Profile insert warning:', profileError.message);
+      }
+    }
+
+    // 3. Mostrar confirmación
+    document.getElementById('confEmail').textContent  = email;
+    document.getElementById('confPlan').textContent   = plan.label;
+    document.getElementById('confQuota').textContent  = plan.quota === 9999 ? 'Ilimitadas' : plan.quota + ' / mes';
+    setStep(3);
+
+  } catch (e) {
+    let msg = e.message || 'Error al crear la cuenta.';
+    if (msg.includes('already registered') || msg.includes('already been registered')) {
+      msg = 'Este correo ya tiene una cuenta. <a href="login.html" style="color:var(--primary)">Inicia sesión</a>.';
+    }
+    showAlert(err, msg, true);
+    btn.disabled = false;
+    btn.innerHTML = 'Crear cuenta';
+  }
+}
+
+function showAlert(el, msg, html = false) {
+  if (html) el.innerHTML = msg; else el.textContent = msg;
+  el.classList.add('show');
+}
+
+// Si ya hay sesión activa, redirigir
+(async function () {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) window.location.href = 'usuario.html';
+})();
+</script>
+</body>
+</html>

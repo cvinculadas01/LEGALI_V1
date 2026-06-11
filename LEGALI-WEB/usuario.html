@@ -3,83 +3,62 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LEGALI — Asistente Jurídico IA</title>
+<title>LEGALI — Asistente Jurídico</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="css/styles.css"/>
 <style>
-/* ── Estilos adicionales para vista de usuario ─────────────── */
-
-/* Barra de usuario en la parte superior del sidebar */
+/* ── User info bar ── */
 .user-info-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(27,79,216,0.12);
-  border: 1px solid rgba(59,130,246,0.2);
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; margin: 0 0 8px;
+  background: rgba(27,79,216,0.12); border: 1px solid rgba(59,130,246,0.2);
   border-radius: 10px;
-  margin: 0 16px 8px;
 }
-
 .user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 50%; background: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
+.user-info-text { flex: 1; min-width: 0; }
+.user-info-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-info-role { font-size: 10px; color: var(--text-muted); letter-spacing: .5px; text-transform: uppercase; }
+.btn-logout { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; transition: color .2s; flex-shrink: 0; }
+.btn-logout:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
-.user-info-text {
-  flex: 1;
-  min-width: 0;
+/* ── Quota widget ── */
+.quota-widget {
+  margin: 0 0 8px; padding: 10px 14px;
+  background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px;
 }
+.quota-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.quota-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.quota-count { font-size: 12px; font-weight: 600; color: #fff; }
+.quota-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 4px; height: 5px; overflow: hidden; }
+.quota-bar-fill { height: 100%; border-radius: 4px; background: var(--primary-light); transition: width .5s; }
+.quota-bar-fill.warn { background: #D97706; }
+.quota-bar-fill.danger { background: var(--red); }
+.quota-plan { font-size: 11px; color: #5A7AA8; margin-top: 5px; display: flex; justify-content: space-between; }
+.quota-plan a { color: var(--gold-light); text-decoration: none; font-weight: 600; }
+.quota-plan a:hover { text-decoration: underline; }
+.quota-exhausted {
+  background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.3);
+  border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #FCA5A5;
+  margin: 0 0 8px; text-align: center;
+}
+.quota-exhausted a { color: var(--gold-light); font-weight: 700; text-decoration: none; }
 
-.user-info-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* ── Resto ── */
+.btn-logout-text {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; color: #4A6080; font-size: 12px;
+  cursor: pointer; padding: 6px 0; width: 100%; transition: color .2s;
 }
-
-.user-info-role {
-  font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.btn-logout {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-  border-radius: 4px;
-  transition: color 0.2s, background 0.2s;
-  flex-shrink: 0;
-}
-
-.btn-logout:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.08);
-}
+.btn-logout-text:hover { color: var(--red); }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
-     SIDEBAR — Vista Usuario (solo chat + áreas + nueva conv.)
-══════════════════════════════════════════════════════════ -->
 <aside id="sidebar">
   <div class="brand">
     <div class="brand-bars"><span></span><span></span><span></span></div>
@@ -87,25 +66,46 @@
     <div class="brand-sub">Asistente Jurídico · Colombia</div>
   </div>
 
-  <!-- Info del usuario logueado -->
+  <!-- Usuario info -->
   <div class="user-info-bar" id="userInfoBar">
     <div class="user-avatar" id="userAvatar">?</div>
     <div class="user-info-text">
       <div class="user-info-name" id="userDisplayName">Usuario</div>
-      <div class="user-info-role">Usuario</div>
+      <div class="user-info-role" id="userPlanLabel">Cargando...</div>
     </div>
     <button class="btn-logout" onclick="legaliLogout()" title="Cerrar sesión">⎋</button>
   </div>
 
+  <!-- Cuota de consultas -->
+  <div class="quota-widget" id="quotaWidget" style="display:none">
+    <div class="quota-header">
+      <span class="quota-label">🔢 Consultas usadas</span>
+      <span class="quota-count" id="quotaCount">—</span>
+    </div>
+    <div class="quota-bar-wrap">
+      <div class="quota-bar-fill" id="quotaBarFill" style="width:0%"></div>
+    </div>
+    <div class="quota-plan">
+      <span id="quotaPlanName">Plan Gratis</span>
+      <a href="planes.html">Actualizar plan ↗</a>
+    </div>
+  </div>
+
+  <!-- Aviso cuota agotada -->
+  <div class="quota-exhausted" id="quotaExhausted" style="display:none">
+    ⚠️ Consultas agotadas.<br/>
+    <a href="planes.html">Actualiza tu plan →</a>
+  </div>
+
   <div class="divider"></div>
 
-  <!-- Docs de sesión -->
-  <div class="sidebar-section">
-    <label class="section-label">📎 Mis Documentos (sesión)</label>
-    <p class="section-hint">Solo visibles para ti en esta sesión</p>
+  <!-- Documentos de sesión (solo planes Consultorio+) -->
+  <div class="sidebar-section" id="docsSection">
+    <label class="section-label">📎 Mis documentos (sesión)</label>
+    <p class="section-hint" id="docsHint">Solo visibles en esta sesión</p>
     <div class="upload-area upload-area-sm" id="sessionUploadArea">
       <input type="file" id="sessionFileInput" accept=".pdf,.txt,.md,.docx" style="display:none" multiple/>
-      <span id="sessionUploadLabel">📤 Subir documento personal</span>
+      <span id="sessionUploadLabel">📤 Subir documento</span>
     </div>
     <div id="sessionDocList"></div>
   </div>
@@ -120,22 +120,21 @@
 
   <div class="divider"></div>
 
-  <!-- Nueva conversación -->
   <button class="btn-new-chat" id="btnNewChat">🗑️ Nueva conversación</button>
-  <p class="legal-notice">⚠️ LEGALI es orientación general. No reemplaza a un abogado.</p>
+
+  <button class="btn-logout-text" onclick="legaliLogout()">⎋ Cerrar sesión</button>
+
+  <p class="legal-notice">⚠️ LEGALI es orientación general. No reemplaza a un abogado. (Ley 1123/2007)</p>
 </aside>
 
 <button class="sidebar-toggle" id="sidebarToggle">☰</button>
 
-<!-- ══════════════════════════════════════════════════════════
-     MAIN
-══════════════════════════════════════════════════════════ -->
 <main id="main">
   <div id="welcome" class="welcome">
     <div class="welcome-logo">⚖️</div>
     <h1>LEGALI</h1>
     <p>Especializado en <strong>Derecho Procesal Colombiano</strong>.<br/>
-       Conectado a jurisprudencia oficial y tu biblioteca de documentos.</p>
+       CGP · CPACA · CPP · CPL · Jurisprudencia oficial.</p>
     <div class="suggestions" id="suggestions"></div>
   </div>
 
@@ -144,7 +143,7 @@
   <div class="input-area">
     <div id="ragIndicator" class="rag-indicator hidden"></div>
     <div class="input-wrap">
-      <textarea id="userInput" placeholder="Consulta sobre derecho colombiano..." rows="1"></textarea>
+      <textarea id="userInput" placeholder="Consulta sobre derecho procesal colombiano..." rows="1"></textarea>
       <button id="sendBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -155,35 +154,119 @@
   </div>
 </main>
 
-<!-- Scripts CDN -->
+<!-- CDNs -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="js/docx.iife.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-</script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
 
-<!-- Auth guard — PRIMERO, antes de cualquier otro script -->
-<script src="js/auth.js"></script>
-
+<!-- JS locales: ORDEN IMPORTA -->
 <script src="js/constants.js"></script>
 <script src="js/supabase.js"></script>
+<script src="js/quota.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/providers.js"></script>
 <script src="js/app.js"></script>
 
 <script>
-// ── Mostrar info del usuario en sidebar ──────────────────────
-(function initUserBar() {
-  const user = window.LEGALI_USER;
-  if (!user) return;
+// ── Auth guard con Supabase Auth real ─────────────────────────
+const SUPABASE_URL_U = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_KEY_U = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+const sbUser = supabase.createClient(SUPABASE_URL_U, SUPABASE_KEY_U);
 
-  // Avatar con inicial del nombre
-  const initial = (user.username || 'U').charAt(0).toUpperCase();
-  document.getElementById('userAvatar').textContent = initial;
-  document.getElementById('userDisplayName').textContent = user.username;
+const PLAN_QUOTAS = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999 };
+const PLAN_LABELS = { gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado' };
+
+let CURRENT_PROFILE = null;
+
+(async function initUser() {
+  const { data: { session } } = await sbUser.auth.getSession();
+  if (!session) return window.location.href = 'login.html';
+
+  const { data: profile } = await sbUser.from('legali_profiles')
+    .select('*').eq('id', session.user.id).maybeSingle();
+
+  if (!profile || !profile.active) {
+    await sbUser.auth.signOut();
+    return window.location.href = 'login.html';
+  }
+
+  if (profile.plan === 'admin') {
+    return window.location.href = 'admin/dashboard.html';
+  }
+
+  CURRENT_PROFILE = profile;
+
+  // Exponer para app.js, quota.js, providers.js
+  window.LEGALI_USER = {
+    id:          session.user.id,
+    email:       session.user.email,
+    nombre:      profile.nombre,
+    apellido:    profile.apellido,
+    plan:        profile.plan,
+    provider:    profile.provider_assigned || 'groq',
+    quota_used:  profile.quota_used  || 0,
+    quota_total: profile.quota_total || PLAN_QUOTAS[profile.plan] || 5,
+  };
+
+  // Render sidebar info
+  const initials = ((profile.nombre?.[0] || '') + (profile.apellido?.[0] || '')).toUpperCase() || '?';
+  document.getElementById('userAvatar').textContent       = initials;
+  document.getElementById('userDisplayName').textContent  = (profile.nombre || '') + ' ' + (profile.apellido || '');
+  document.getElementById('userPlanLabel').textContent    = PLAN_LABELS[profile.plan] || profile.plan;
+
+  // Render cuota
+  renderQuota(profile);
+
+  // Bloquear docs si plan gratis
+  if (profile.plan === 'gratis') {
+    const docsArea = document.getElementById('sessionUploadArea');
+    if (docsArea) {
+      docsArea.style.opacity      = '.4';
+      docsArea.style.pointerEvents = 'none';
+      document.getElementById('docsHint').textContent = 'Disponible desde plan Consultorio';
+    }
+  }
 })();
+
+function renderQuota(profile) {
+  const used        = profile.quota_used  || 0;
+  const total       = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
+  const isUnlimited = total === 9999;
+  const pct         = isUnlimited ? 0 : Math.min(100, Math.round(used / total * 100));
+
+  document.getElementById('quotaWidget').style.display = 'block';
+  document.getElementById('quotaCount').textContent    = isUnlimited ? `${used} / ∞` : `${used} / ${total}`;
+  document.getElementById('quotaPlanName').textContent = PLAN_LABELS[profile.plan] || profile.plan;
+
+  const bar       = document.getElementById('quotaBarFill');
+  bar.style.width = pct + '%';
+  bar.className   = 'quota-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+
+  if (!isUnlimited && used >= total) {
+    document.getElementById('quotaExhausted').style.display = 'block';
+    const input = document.getElementById('userInput');
+    const btn   = document.getElementById('sendBtn');
+    if (input) { input.disabled = true; input.placeholder = 'Cuota agotada. Actualiza tu plan.'; }
+    if (btn)   { btn.disabled = true; }
+  }
+}
+
+async function legaliLogout() {
+  await sbUser.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// Refrescar cuota cada vez que app.js envíe una consulta
+window.addEventListener('legali:query_sent', async () => {
+  const { data: updated } = await sbUser.from('legali_profiles')
+    .select('quota_used, quota_total, plan').eq('id', window.LEGALI_USER?.id).maybeSingle();
+  if (updated) {
+    window.LEGALI_USER.quota_used = updated.quota_used;
+    renderQuota({ ...CURRENT_PROFILE, ...updated });
+  }
+});
 </script>
 </body>
 </html>

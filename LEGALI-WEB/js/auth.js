@@ -1,54 +1,71 @@
-/**
- * auth.js — Guard de autenticación LEGALI
- * Incluir como PRIMER script en index.html y usuario.html
- * Redirige al login si no hay sesión válida o el rol no coincide.
- */
-(function() {
-  const stored = sessionStorage.getItem('legali_user');
-  let user = null;
+// ============================================================
+// LEGALI v2.0 — js/auth.js
+// Guard para index.html legacy + utilidades de sesión
+// ============================================================
 
-  try {
-    if (stored) user = JSON.parse(stored);
-  } catch(e) {
-    sessionStorage.removeItem('legali_user');
+'use strict';
+
+(function initAuthGuard() {
+  // Solo aplica en index.html (admin legacy)
+  if (!document.getElementById('btnToggleLib') &&
+      !window.location.pathname.endsWith('index.html') &&
+      window.location.pathname !== '/') {
+    return;
   }
 
-  // Determinar qué rol requiere esta página
-  const page = location.pathname.split('/').pop() || 'index.html';
-  const requiredRole = page === 'index.html' ? 'admin' : 'user';
+  const _sbAuth = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Sin sesión → login
-  if (!user || !user.role) {
-    location.replace('login.html');
-    throw new Error('No session'); // detener ejecución del resto del JS
-  }
+  _sbAuth.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
 
-  // Rol incorrecto → redirigir a la página correcta para su rol
-  if (user.role !== requiredRole) {
-    location.replace(user.role === 'admin' ? 'index.html' : 'usuario.html');
-    throw new Error('Wrong role');
-  }
+    _sbAuth.from('legali_profiles')
+      .select('plan, active')
+      .eq('id', session.user.id)
+      .maybeSingle()
+      .then(({ data: profile }) => {
+        if (!profile || !profile.active) {
+          _sbAuth.auth.signOut().then(() => {
+            window.location.href = 'login.html';
+          });
+          return;
+        }
 
-  // Exponer usuario globalmente para que app.js lo use
-  window.LEGALI_USER = user;
+        if (profile.plan !== 'admin') {
+          window.location.href = 'usuario.html';
+          return;
+        }
+
+        // Es admin en index.html legacy → redirigir al nuevo dashboard
+        window.location.href = 'admin/dashboard.html';
+      });
+  });
 })();
 
-/**
- * Cerrar sesión — llamar desde cualquier página
- */
-function legaliLogout() {
-  sessionStorage.removeItem('legali_user');
-  location.replace('login.html');
+// ── Función global de logout (usada en todos los HTMLs) ───────
+async function legaliLogout() {
+  try {
+    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    await _sb.auth.signOut();
+  } catch (e) {
+    console.warn('Logout error:', e);
+  } finally {
+    window.location.href = 'login.html';
+  }
 }
 
-/**
- * Hash SHA-256 (Web Crypto API) — usado en login.html
- * Exportado globalmente por si otras partes lo necesitan.
- */
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data     = encoder.encode(password);
-  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
-  const hashArr  = Array.from(new Uint8Array(hashBuf));
-  return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
+// ── Obtener sesión activa ─────────────────────────────────────
+async function getActiveSession() {
+  const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session }, error } = await _sb.auth.getSession();
+  if (error || !session) return null;
+  return session;
+}
+
+// ── Obtener JWT del usuario actual ────────────────────────────
+async function getAccessToken() {
+  const session = await getActiveSession();
+  return session?.access_token ?? null;
 }

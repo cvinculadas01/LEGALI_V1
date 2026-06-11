@@ -6,300 +6,134 @@
 <title>LEGALI — Acceso</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --primary:       #1B4FD8;
-  --primary-light: #3B82F6;
-  --primary-glow:  rgba(59,130,246,0.18);
-  --sidebar-bg:    #0A1628;
-  --sidebar-border:#142240;
-  --bg:            #F0F4FC;
-  --card:          #FFFFFF;
-  --text:          #0F2545;
-  --text-soft:     #4A6080;
-  --text-muted:    #8899AA;
-  --border:        #D4E0F0;
-  --gold:          #C8960A;
-  --gold-light:    #F5C842;
-  --green:         #0D9E6C;
-  --red:           #DC2626;
-  --radius:        14px;
-  --radius-sm:     8px;
-  --shadow:        0 4px 24px rgba(27,79,216,0.10);
-  --shadow-lg:     0 8px 40px rgba(27,79,216,0.16);
-  --font-display:  'Syne', sans-serif;
-  --font-body:     'DM Sans', sans-serif;
-  --font-mono:     'DM Mono', monospace;
+  --primary: #1B4FD8; --primary-light: #3B82F6; --primary-glow: rgba(59,130,246,0.18);
+  --sidebar-bg: #0A1628; --sidebar-border: #142240; --bg: #F0F4FC;
+  --card: #FFFFFF; --text: #0F2545; --text-soft: #4A6080;
+  --text-muted: #8899AA; --border: #D4E0F0; --gold: #C8960A;
+  --gold-light: #F5C842; --green: #0D9E6C; --red: #DC2626;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(27,79,216,0.10);
+  --shadow-lg: 0 8px 40px rgba(27,79,216,0.16);
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
 }
+html, body { height: 100%; font-family: var(--font-body); background: var(--sidebar-bg); color: var(--text); overflow: hidden; }
 
-html, body {
-  height: 100%;
-  font-family: var(--font-body);
-  background: var(--sidebar-bg);
-  color: var(--text);
-  overflow: hidden;
-}
-
-/* ── Fondo animado ─────────────────────────────────────────── */
 .bg-pattern {
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(27,79,216,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(200,150,10,0.08) 0%, transparent 60%),
-    var(--sidebar-bg);
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(27,79,216,0.18) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 80% 60%, rgba(200,150,10,0.08) 0%, transparent 60%),
+              var(--sidebar-bg);
   z-index: 0;
 }
-
 .bg-grid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  z-index: 0;
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 40px 40px; z-index: 0;
 }
-
-/* ── Contenedor central ────────────────────────────────────── */
 .login-wrap {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px;
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 24px;
 }
-
 .login-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(59,130,246,0.2);
-  border-radius: 24px;
-  padding: 48px 44px 40px;
-  width: 100%;
-  max-width: 420px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 24px; padding: 48px 44px 40px; width: 100%; max-width: 420px;
   backdrop-filter: blur(20px);
   box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.1);
-  animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  animation: cardIn .5s cubic-bezier(0.22,1,0.36,1) both;
 }
+@keyframes cardIn { from { opacity:0; transform:translateY(24px) scale(.97); } to { opacity:1; transform:none; } }
 
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
+.brand { text-align: center; margin-bottom: 32px; }
+.brand-icon { font-size: 40px; margin-bottom: 12px; display: block; animation: pulse 3s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.8; transform:scale(1.05); } }
+.brand-name { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -.5px; }
+.brand-sub { font-size: 12px; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
 
-/* ── Logo / marca ──────────────────────────────────────────── */
-.brand {
-  text-align: center;
-  margin-bottom: 36px;
-}
-
-.brand-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-  display: block;
-  animation: pulse 3s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(1.05); }
-}
-
-.brand-name {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 800;
-  color: #FFFFFF;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.brand-sub {
-  font-size: 12px;
-  color: var(--text-muted);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
-
-/* ── Selector de rol ───────────────────────────────────────── */
 .role-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 28px;
-  background: rgba(0,0,0,0.2);
-  border-radius: var(--radius-sm);
-  padding: 4px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px;
+  background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); padding: 4px;
 }
-
 .role-tab {
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  padding: 10px; border: none; border-radius: 6px; background: transparent;
+  color: var(--text-muted); font-family: var(--font-body); font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
 }
+.role-tab.active { background: var(--primary); color: #fff; box-shadow: 0 2px 12px rgba(27,79,216,0.4); }
+.role-tab:not(.active):hover { color: #fff; background: rgba(255,255,255,0.06); }
 
-.role-tab.active {
-  background: var(--primary);
-  color: #fff;
-  box-shadow: 0 2px 12px rgba(27,79,216,0.4);
+.admin-badge {
+  display: none; align-items: center; gap: 8px;
+  background: rgba(200,150,10,0.1); border: 1px solid rgba(200,150,10,0.25);
+  border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 18px;
+  font-size: 12px; color: var(--gold-light);
 }
+.admin-badge.show { display: flex; }
 
-.role-tab:not(.active):hover {
-  color: #fff;
-  background: rgba(255,255,255,0.06);
-}
-
-/* ── Formulario ────────────────────────────────────────────── */
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
 .form-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(59,130,246,0.2);
-  border-radius: var(--radius-sm);
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  width: 100%; padding: 12px 16px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--radius-sm); color: #fff;
+  font-family: var(--font-body); font-size: 14px; outline: none;
+  transition: border-color .2s, background .2s, box-shadow .2s;
 }
-
 .form-input::placeholder { color: rgba(255,255,255,0.25); }
+.form-input:focus { border-color: var(--primary-light); background: rgba(59,130,246,0.08); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
 
-.form-input:focus {
-  border-color: var(--primary-light);
-  background: rgba(59,130,246,0.08);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-}
+.forgot-link { display: block; text-align: right; font-size: 12px; color: #5A7AA8; text-decoration: none; margin-top: -8px; margin-bottom: 16px; transition: color .2s; }
+.forgot-link:hover { color: var(--primary-light); }
 
-/* ── Botón principal ───────────────────────────────────────── */
 .btn-login {
-  width: 100%;
-  padding: 14px;
-  margin-top: 8px;
-  background: var(--primary);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
+  width: 100%; padding: 14px; margin-top: 4px;
+  background: var(--primary); border: none; border-radius: var(--radius-sm);
+  color: #fff; font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: background .2s, transform .15s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+.btn-login:hover:not(:disabled) { background: var(--primary-light); box-shadow: 0 4px 20px rgba(59,130,246,0.4); transform: translateY(-1px); }
+.btn-login:disabled { opacity: .6; cursor: not-allowed; }
 
-.btn-login:hover:not(:disabled) {
-  background: var(--primary-light);
-  box-shadow: 0 4px 20px rgba(59,130,246,0.4);
-  transform: translateY(-1px);
-}
-
-.btn-login:active { transform: translateY(0); }
-
-.btn-login:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ── Spinner ───────────────────────────────────────────────── */
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Error / info ──────────────────────────────────────────── */
-.alert {
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  margin-top: 14px;
-  display: none;
-}
-
+.alert { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-top: 14px; display: none; }
 .alert.show { display: block; }
+.alert-error { background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.3); color: #FCA5A5; }
+.alert-info  { background: rgba(13,158,108,0.12); border: 1px solid rgba(13,158,108,0.3); color: #6EE7B7; }
 
-.alert-error {
-  background: rgba(220,38,38,0.15);
-  border: 1px solid rgba(220,38,38,0.3);
-  color: #FCA5A5;
+.divider { text-align: center; font-size: 12px; color: #2A4060; margin: 20px 0; position: relative; }
+.divider::before, .divider::after { content:""; position:absolute; top:50%; width:calc(50% - 24px); height:1px; background:rgba(255,255,255,0.07); }
+.divider::before { left:0; } .divider::after { right:0; }
+
+.register-link { text-align: center; font-size: 13px; color: #5A7AA8; }
+.register-link a { color: var(--primary-light); font-weight: 600; text-decoration: none; }
+.register-link a:hover { text-decoration: underline; }
+
+.plans-link {
+  display: block; text-align: center; font-size: 12px; color: var(--gold-light);
+  text-decoration: none; margin-top: 12px; transition: opacity .2s;
 }
+.plans-link:hover { opacity: .8; }
 
-.alert-info {
-  background: rgba(13,158,108,0.12);
-  border: 1px solid rgba(13,158,108,0.3);
-  color: #6EE7B7;
-}
+.login-footer { text-align: center; margin-top: 24px; font-size: 11px; color: rgba(255,255,255,0.12); letter-spacing: .5px; }
 
-/* ── Footer ────────────────────────────────────────────────── */
-.login-footer {
-  text-align: center;
-  margin-top: 28px;
-  font-size: 11px;
-  color: rgba(255,255,255,0.15);
-  letter-spacing: 0.5px;
-}
-
-/* ── Badge de rol admin ────────────────────────────────────── */
-.admin-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(200,150,10,0.1);
-  border: 1px solid rgba(200,150,10,0.25);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  margin-bottom: 20px;
-  font-size: 12px;
-  color: var(--gold-light);
-  display: none;
-}
-
-.admin-badge.show { display: flex; }
+/* Forgot password panel */
+.forgot-panel { display: none; }
+.forgot-panel.show { display: block; }
+.main-form.hidden { display: none; }
+.back-btn { background: none; border: none; color: #5A7AA8; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-bottom: 16px; transition: color .2s; }
+.back-btn:hover { color: #fff; }
 </style>
 </head>
 <body>
-
 <div class="bg-pattern"></div>
 <div class="bg-grid"></div>
 
@@ -313,71 +147,89 @@ html, body {
       <div class="brand-sub">Asistente Jurídico · Colombia</div>
     </div>
 
-    <!-- Selector de rol -->
-    <div class="role-tabs">
-      <button class="role-tab active" id="tabUser" onclick="setRole('user')">
-        👤 Usuario
+    <!-- ── Formulario principal ── -->
+    <div id="mainForm">
+      <div class="role-tabs">
+        <button class="role-tab active" id="tabUser" onclick="setRole('user')">👤 Usuario</button>
+        <button class="role-tab" id="tabAdmin" onclick="setRole('admin')">🛡️ Administrador</button>
+      </div>
+
+      <div class="admin-badge" id="adminBadge">
+        🛡️ Acceso de administrador — Panel completo
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="inputEmail" class="form-input" placeholder="tu@correo.com"
+               autocomplete="email" onkeydown="if(event.key==='Enter') document.getElementById('inputPass').focus()"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="inputPass" class="form-input" placeholder="••••••••"
+               autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()"/>
+      </div>
+
+      <a href="#" class="forgot-link" onclick="showForgot(); return false;">¿Olvidaste tu contraseña?</a>
+
+      <button class="btn-login" id="btnLogin" onclick="doLogin()">
+        Ingresar
       </button>
-      <button class="role-tab" id="tabAdmin" onclick="setRole('admin')">
-        🛡️ Administrador
-      </button>
+
+      <div class="alert alert-error" id="alertError"></div>
+      <div class="alert alert-info"  id="alertInfo"></div>
+
+      <div class="divider">¿No tienes cuenta?</div>
+      <div class="register-link">
+        <a href="register.html">Crear cuenta gratis</a> — 5 consultas al mes sin costo
+      </div>
+      <a class="plans-link" href="planes.html">⚖️ Ver todos los planes →</a>
     </div>
 
-    <!-- Badge admin -->
-    <div class="admin-badge" id="adminBadge">
-      🛡️ Acceso de administrador — Panel completo
+    <!-- ── Panel: recuperar contraseña ── -->
+    <div id="forgotPanel" style="display:none">
+      <button class="back-btn" onclick="showMain()">← Volver</button>
+      <div class="brand" style="margin-bottom:20px">
+        <div class="brand-name" style="font-size:22px">Recuperar contraseña</div>
+        <div class="brand-sub">Te enviamos un enlace a tu correo</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="forgotEmail" class="form-input" placeholder="tu@correo.com"
+               onkeydown="if(event.key==='Enter') doForgot()"/>
+      </div>
+      <button class="btn-login" id="btnForgot" onclick="doForgot()">Enviar enlace</button>
+      <div class="alert alert-error" id="forgotError"></div>
+      <div class="alert alert-info"  id="forgotInfo"></div>
     </div>
 
-    <!-- Formulario -->
-    <div class="form-group">
-      <label class="form-label">Usuario</label>
-      <input
-        type="text"
-        id="inputUser"
-        class="form-input"
-        placeholder="Tu nombre de usuario"
-        autocomplete="username"
-        onkeydown="if(event.key==='Enter') document.getElementById('inputPass').focus()"
-      />
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Contraseña</label>
-      <input
-        type="password"
-        id="inputPass"
-        class="form-input"
-        placeholder="••••••••"
-        autocomplete="current-password"
-        onkeydown="if(event.key==='Enter') doLogin()"
-      />
-    </div>
-
-    <button class="btn-login" id="btnLogin" onclick="doLogin()">
-      Ingresar
-    </button>
-
-    <div class="alert alert-error" id="alertError"></div>
-    <div class="alert alert-info"  id="alertInfo"></div>
-
-    <div class="login-footer">
-      LEGALI &copy; 2025 · Solo para usuarios autorizados
-    </div>
-
+    <div class="login-footer">LEGALI &copy; 2025 · Solo para usuarios autorizados</div>
   </div>
 </div>
 
-<!-- Supabase CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/constants.js"></script>
 <script>
-// ── Supabase init ────────────────────────────────────────────
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// ── Supabase init ─────────────────────────────────────────────
+const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Estado ───────────────────────────────────────────────────
 let currentRole = 'user';
 
+// ── Si ya hay sesión activa → redirigir ──────────────────────
+(async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  redirectByRole(session.user.id);
+})();
+
+async function redirectByRole(userId) {
+  const { data: profile } = await sb.from('legali_profiles')
+    .select('plan, active').eq('id', userId).maybeSingle();
+  if (!profile || !profile.active) return;
+  window.location.href = profile.plan === 'admin' ? 'admin/dashboard.html' : 'usuario.html';
+}
+
+// ── UI helpers ───────────────────────────────────────────────
 function setRole(role) {
   currentRole = role;
   document.getElementById('tabUser').classList.toggle('active', role === 'user');
@@ -385,111 +237,108 @@ function setRole(role) {
   document.getElementById('adminBadge').classList.toggle('show', role === 'admin');
   clearAlerts();
 }
-
 function clearAlerts() {
-  document.getElementById('alertError').classList.remove('show');
-  document.getElementById('alertInfo').classList.remove('show');
+  ['alertError','alertInfo'].forEach(id => document.getElementById(id).classList.remove('show'));
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('show');
+}
+function showInfo(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('show');
+}
+function showForgot() {
+  document.getElementById('mainForm').style.display = 'none';
+  document.getElementById('forgotPanel').style.display = 'block';
+  document.getElementById('forgotEmail').value = document.getElementById('inputEmail').value;
+}
+function showMain() {
+  document.getElementById('forgotPanel').style.display = 'none';
+  document.getElementById('mainForm').style.display = 'block';
 }
 
-function showError(msg) {
-  const el = document.getElementById('alertError');
-  el.textContent = msg;
-  el.classList.add('show');
-  document.getElementById('alertInfo').classList.remove('show');
-}
-
-function showInfo(msg) {
-  const el = document.getElementById('alertInfo');
-  el.textContent = msg;
-  el.classList.add('show');
-  document.getElementById('alertError').classList.remove('show');
-}
-
-
-// ── Hash de contraseña (SHA-256 via Web Crypto API) ──────────
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data     = encoder.encode(password);
-  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
-  const hashArr  = Array.from(new Uint8Array(hashBuf));
-  return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ── Login ─────────────────────────────────────────────────────
+// ── Login con Supabase Auth ───────────────────────────────────
 async function doLogin() {
   clearAlerts();
-  const username = document.getElementById('inputUser').value.trim();
-  const password = document.getElementById('inputPass').value;
-  const btn      = document.getElementById('btnLogin');
+  const email = document.getElementById('inputEmail').value.trim();
+  const pass  = document.getElementById('inputPass').value;
+  const btn   = document.getElementById('btnLogin');
 
-  if (!username || !password) {
-    showError('Por favor ingresa usuario y contraseña.');
-    return;
-  }
+  if (!email || !pass) return showError('alertError', 'Ingresa tu correo y contraseña.');
 
-  btn.disabled  = true;
-  btn.innerHTML = '<span class="spinner"></span>Verificando...';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Verificando...';
 
   try {
-    const pwdHash = await hashPassword(password);
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
 
-    const { data, error } = await sb
-      .from('legali_users')
-      .select('id, username, role, active')
-      .eq('username', username)
-      .eq('password_hash', pwdHash)
-      .eq('active', true)
-      .maybeSingle();
-
-    if (error || !data) {
-      showError('Usuario o contraseña incorrectos.');
-      btn.disabled  = false;
-      btn.innerHTML = 'Ingresar';
+    if (error) {
+      const msg = error.message.includes('Invalid login') || error.message.includes('invalid')
+        ? 'Correo o contraseña incorrectos.'
+        : error.message.includes('Email not confirmed')
+        ? 'Debes confirmar tu correo antes de ingresar.'
+        : error.message;
+      showError('alertError', msg);
+      btn.disabled = false; btn.innerHTML = 'Ingresar';
       return;
     }
 
-    if (data.role !== currentRole) {
-      const roleName = currentRole === 'admin' ? 'administrador' : 'usuario';
-      showError(`Esta cuenta no tiene acceso de ${roleName}.`);
-      btn.disabled  = false;
-      btn.innerHTML = 'Ingresar';
+    // Verificar perfil y rol
+    const { data: profile, error: pErr } = await sb.from('legali_profiles')
+      .select('plan, active, nombre').eq('id', data.user.id).maybeSingle();
+
+    if (pErr || !profile) {
+      showError('alertError', 'No se encontró tu perfil. Contacta soporte.');
+      await sb.auth.signOut();
+      btn.disabled = false; btn.innerHTML = 'Ingresar';
       return;
     }
 
-    sessionStorage.setItem('legali_user', JSON.stringify({
-      id:       data.id,
-      username: data.username,
-      role:     data.role
-    }));
+    if (!profile.active) {
+      showError('alertError', 'Tu cuenta está suspendida. Contacta soporte.');
+      await sb.auth.signOut();
+      btn.disabled = false; btn.innerHTML = 'Ingresar';
+      return;
+    }
 
-    showInfo('Acceso concedido. Redirigiendo...');
+    const isAdmin = profile.plan === 'admin';
+    if (currentRole === 'admin' && !isAdmin) {
+      showError('alertError', 'Esta cuenta no tiene acceso de administrador.');
+      await sb.auth.signOut();
+      btn.disabled = false; btn.innerHTML = 'Ingresar';
+      return;
+    }
+    if (currentRole === 'user' && isAdmin) {
+      // Admin puede entrar igual al panel de usuario, redirigir a admin
+    }
 
+    showInfo('alertInfo', `Bienvenido, ${profile.nombre || ''}. Redirigiendo...`);
     setTimeout(() => {
-      window.location.href = data.role === 'admin' ? 'index.html' : 'usuario.html';
-    }, 800);
+      window.location.href = isAdmin ? 'admin/dashboard.html' : 'usuario.html';
+    }, 700);
 
-  } catch (err) {
-    showError('Error de conexión. Intenta de nuevo.');
-    console.error(err);
-    btn.disabled  = false;
-    btn.innerHTML = 'Ingresar';
+  } catch (e) {
+    showError('alertError', 'Error de conexión. Intenta de nuevo.');
+    btn.disabled = false; btn.innerHTML = 'Ingresar';
   }
 }
 
-// ── Si ya hay sesión activa, redirigir directo ───────────────
-(function checkExistingSession() {
-  const stored = sessionStorage.getItem('legali_user');
-  if (stored) {
-    try {
-      const user = JSON.parse(stored);
-      if (user && user.role) {
-        window.location.href = user.role === 'admin' ? 'index.html' : 'usuario.html';
-      }
-    } catch(e) {
-      sessionStorage.removeItem('legali_user');
-    }
-  }
-})();
+// ── Recuperar contraseña ──────────────────────────────────────
+async function doForgot() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const btn   = document.getElementById('btnForgot');
+  if (!email) return showError('forgotError', 'Ingresa tu correo electrónico.');
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Enviando...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/login.html',
+  });
+  btn.disabled = false; btn.innerHTML = 'Enviar enlace';
+
+  if (error) { showError('forgotError', error.message); return; }
+  showInfo('forgotInfo', 'Enlace enviado. Revisa tu bandeja de entrada y spam.');
+}
 </script>
 </body>
 </html>

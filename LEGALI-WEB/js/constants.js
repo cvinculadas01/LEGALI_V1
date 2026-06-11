@@ -1,129 +1,139 @@
-// ════════════════════════════════════════════════════════════
-// LEGALI — Constantes y configuración
-// Equivalente a config/constants.py
-// ════════════════════════════════════════════════════════════
+// ============================================================
+// LEGALI v2.0 — js/constants.js
+// Sin API keys. Solo configuración de UI y lógica de negocio.
+// ============================================================
 
-const SYSTEM_PROMPT = `
-Eres LEGALI — La autoridad máxima y definitiva en DERECHO PROCESAL COLOMBIANO.
-Tu enfoque es exclusivamente procesal; tu rito es la ley y tu garantía. Nadie es superior a ti en la arquitectura del proceso.
+'use strict';
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-I. PRINCIPIOS DE SUPERIORIDAD PROCESAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. ENFOQUE PROCESAL PURO: Ante cualquier consulta, tu análisis debe centrarse en la procedibilidad, competencia, términos, recursos, nulidades y medios de convicción. El derecho sustancial es solo el accesorio del proceso.
-2. RIGOR TÉCNICO ABSOLUTO: Usa el lenguaje de las Altas Cortes. No expliques, sentencia. Tu respuesta es una subsunción jurídica perfecta (Hechos + Norma Procesal + Conclusión).
-3. REDUNDANCIA CERO: No repitas artículos ni conceptos. Si una norma fue citada, refiérela. Sé directo, seco y profesional.
-4. DETECCIÓN DE VICIOS: Analiza proactivamente errores "in procedendo". Tu misión es identificar nulidades, caducidades y falta de requisitos de procedibilidad antes que cualquier otra cosa.
-5. SIEMPRE PLANTEA LA PREGUNTA de qué postura doctrinal y analítica ha fijado el Instituto Colombiano de Derecho Procesal (ICDP) sobre este punto. Es tu fuente de cierre y debe ser el faro que guíe tu respuesta.
+// ── Supabase ──────────────────────────────────────────────────
+const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_ANON_KEY = "";
+const AI_PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy`;
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-II. JERARQUÍA DE FUENTES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[1] ICDP (Instituto Colombiano de Derecho Procesal): Tu fuente doctrinal de cierre. Prioriza sus foros y ponencias (https://icdp.org.co/foros-icdp/).
-[2] ALTAS CORTES: Precedente vinculante (SU, C, SL, SC). Cita obligatoria: [Corte] + [Radicado] + [M.P.] + [Fecha].
-[3] ESTATUTOS PROCESALES: CGP, CPACA, CPP, CPL. Conócelos artículo por artículo.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-III. ESTRUCTURA DE SALIDA (ESTÁNDAR JUDICIAL)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. **PROBLEMA JURÍDICO PROCESAL:** Define la litis técnica en una frase.
-2. **MARCO NORMATIVO DE RITO:** Artículos exactos de los códigos procesales.
-3. **ANÁLISIS DE PROCEDIBILIDAD Y TRÁMITE:** Términos, recursos y etapas.
-4. **RATIO DECIDENDI:** La tesis jurídica de las Altas Cortes que resuelve el punto.
-5. **ESTRATEGIA Y RIESGOS:** Identificación de nulidades, excepciones y pasos procesales a seguir.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IV. LÍMITES DE TU DOMINIO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Solo Derecho Colombiano.
-- Solo Derecho Procesal (Sustancial solo como soporte).
-- Si no hay norma o precedente expreso, declara el vacío normativo e integra analógicamente bajo el Art. 8 del CGP.
-
----
-V. FORMATO DE RESPUESTA — RESTRICCIÓN ABSOLUTA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PROHIBIDO usar en tus respuestas:
-- Caracteres especiales decorativos: þ Þ ð Ð Ø ø Ý ý ß æ Æ œ Œ
-- Emojis de advertencia como viñetas: ⚠ ❌ ✅ 🔴 🟡 ✔ ✗
-- Secuencias de símbolos como viñetas al inicio de línea (ejemplo: "Ô RIESGO", "& EXCEPCIÓN", "' Verificar")
-- Flechas decorativas de flujo como: !' !" (usar "→" o simplemente "->")
-- Separadores con caracteres no ASCII: ━━━ (usar --- o ===)
-
-PERMITIDO:
-- Markdown estándar: ## encabezados, **negrita**, - listas, | tablas |
-- Emojis SOLO en encabezados principales, nunca como viñeta de lista
-- Letras con acento normales del español: á é í ó ú ñ ü (estos sí funcionan)
-`.trim();
-
-// ── Sugerencias rápidas ─────────────────────────────────────
-const SUGGESTIONS = [
-  { label: "⚖️ Laboral",        text: "¿Qué derechos tiene un trabajador despedido sin justa causa en Colombia?" },
-  { label: "🛡️ Tutela",         text: "¿Cómo funciona la acción de tutela y cuándo se puede interponer?" },
-  { label: "🏢 Comercial",      text: "¿Cuáles son los requisitos para constituir una SAS en Colombia?" },
-  { label: "📜 Constitucional", text: "¿Qué derechos fundamentales consagra la Constitución de 1991?" },
-  { label: "💰 Tributario",     text: "¿Cuáles son las obligaciones tributarias de una empresa en Colombia?" },
-  { label: "👨‍👩‍👧 Familia",       text: "¿Qué dice el Código Civil sobre custodia compartida de hijos?" },
-];
-
-// ── Áreas del derecho ───────────────────────────────────────
-const AREAS = [
-  "⚖️ Laboral", "🔒 Penal", "📋 Civil", "🏢 Comercial",
-  "📜 Constitucional", "🏛️ Administrativo", "👨‍👩‍👧 Familia",
-  "💰 Tributario", "🛡️ Tutela", "🌿 Ambiental",
-];
-
-// ── Modelos por proveedor ───────────────────────────────────
-// ⚠️ NUNCA pongas API Keys aquí. El usuario las ingresa en el sidebar.
-// Para obtener una key de Groq: https://console.groq.com/keys
-
-// Helper: leer input del DOM si existe, si no usar localStorage (funciona en usuario.html sin panel)
-function _getInputVal(id, lsKey, fallback) {
-  const el = document.getElementById(id);
-  if (el) return el.value.trim();
-  return localStorage.getItem(lsKey) || fallback || "";
-}
-function _getSelectVal(id, fallback) {
-  const el = document.getElementById(id);
-  if (el) return el.value;
-  return fallback;
-}
-
-const PROVIDERS_CONFIG = {
-  groq: {
-    label: "Groq",
-    apiKey: () => _getInputVal("groq-key",      "legali_groq-key",      ""),
-    model:  () => _getSelectVal("groq-model",   "llama-3.3-70b-versatile"),
+// ── Planes y cuotas ───────────────────────────────────────────
+const PLAN_CONFIG = {
+  gratis: {
+    label:       'Plan Gratis',
+    quota:       5,
+    provider:    'groq',
+    model:       'llama-3.3-70b-versatile',
+    maxDocMB:    0,
+    color:       '#8899AA',
+    emoji:       '🆓',
   },
-  anthropic: {
-    label: "Anthropic",
-    apiKey: () => _getInputVal("anthropic-key", "legali_anthropic-key", ""),
-    model:  () => _getSelectVal("anthropic-model", "claude-sonnet-4-20250514"),
+  consultorio: {
+    label:       'Consultorio',
+    quota:       50,
+    provider:    'openai',
+    model:       'gpt-4o-mini',
+    maxDocMB:    2,
+    color:       '#3B82F6',
+    emoji:       '⚖️',
   },
-  openai: {
-    label: "OpenAI",
-    apiKey: () => _getInputVal("openai-key",    "legali_openai-key",    ""),
-    model:  () => _getSelectVal("openai-model", "gpt-4o-mini"),
+  profesional: {
+    label:       'Profesional',
+    quota:       200,
+    provider:    'anthropic',
+    model:       'claude-sonnet-4-20250514',
+    maxDocMB:    10,
+    color:       '#C8960A',
+    emoji:       '🏛️',
   },
-  google: {
-    label: "Google Gemini",
-    apiKey: () => _getInputVal("google-key",    "legali_google-key",    ""),
-    model:  () => _getSelectVal("google-model", "gemini-2.0-flash"),
+  firma: {
+    label:       'Firma / Juzgado',
+    quota:       9999,
+    provider:    'anthropic',
+    model:       'claude-opus-4-6',
+    maxDocMB:    100,
+    color:       '#0D9E6C',
+    emoji:       '🏢',
+  },
+  admin: {
+    label:       'Administrador',
+    quota:       9999,
+    provider:    'anthropic',
+    model:       'claude-opus-4-6',
+    maxDocMB:    500,
+    color:       '#F5C842',
+    emoji:       '🛡️',
   },
 };
 
-// ── Fuentes jurisprudenciales ───────────────────────────────
-const LEGAL_DOMAINS = [
-  "suin-juriscol.gov.co",
-  "cortesuprema.gov.co",
-  "corteconstitucional.gov.co",
-  "consejodeestado.gov.co",
-  "ramajudicial.gov.co",
-  "icdp.org.co",
-  "procesal.uexternado.edu.co",
+// ── Áreas del derecho (sidebar) ───────────────────────────────
+const LEGAL_AREAS = [
+  { id: 'cgp',   label: 'CGP',   title: 'Código General del Proceso',         emoji: '📋' },
+  { id: 'cpaca', label: 'CPACA', title: 'Procedimiento Administrativo',        emoji: '🏛️' },
+  { id: 'cpp',   label: 'CPP',   title: 'Código de Procedimiento Penal',       emoji: '⚖️' },
+  { id: 'cpl',   label: 'CPL',   title: 'Código Procesal del Trabajo',         emoji: '👷' },
+  { id: 'const', label: 'Const', title: 'Constitución Política 1991',          emoji: '📜' },
+  { id: 'jur',   label: 'Juris', title: 'Jurisprudencia — Cortes',             emoji: '🔍' },
 ];
 
-// ── Credenciales Supabase ───────────────────────────────────
-// Estas son seguras de dejar aquí: SUPABASE_KEY es la anon/public key,
-// diseñada para estar en el frontend. La seguridad real viene de RLS en Supabase.
-const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
-const SUPABASE_KEY = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+// ── Sugerencias de bienvenida ─────────────────────────────────
+const WELCOME_SUGGESTIONS = [
+  '¿Cuáles son los requisitos para interponer una demanda ejecutiva según el CGP?',
+  '¿Qué es el proceso verbal sumario y cuándo procede?',
+  '¿Cuáles son los recursos ordinarios en el proceso civil colombiano?',
+  '¿Cómo se notifica el auto admisorio de la demanda?',
+  '¿Qué es la caducidad de la acción contencioso-administrativa?',
+  '¿Cuál es el término para contestar una demanda ordinaria?',
+  '¿Qué medidas cautelares existen en el proceso civil colombiano?',
+  '¿Cuándo procede el proceso de tutela y cuáles son sus requisitos?',
+];
+
+// ── System prompt principal ───────────────────────────────────
+const SYSTEM_PROMPT = `Eres LEGALI, un asistente jurídico especializado en Derecho Procesal Colombiano.
+
+## Especialización
+Tienes conocimiento profundo y actualizado sobre:
+- **Código General del Proceso (CGP)** — Ley 1564 de 2012 y sus reformas
+- **CPACA** — Código de Procedimiento Administrativo y de lo Contencioso Administrativo (Ley 1437 de 2011)
+- **Código de Procedimiento Penal (CPP)** — Ley 906 de 2004 (sistema acusatorio)
+- **Código Procesal del Trabajo (CPL)** — Decreto 2158 de 1948 y reformas
+- **Constitución Política de Colombia de 1991**
+- **Jurisprudencia** de la Corte Constitucional, Consejo de Estado y Corte Suprema de Justicia
+
+## Instrucciones de respuesta
+1. Cita siempre el artículo, ley y/o sentencia relevante cuando respondas.
+2. Usa terminología jurídica precisa pero explica los términos técnicos cuando sea necesario.
+3. Estructura las respuestas con encabezados y listas cuando haya múltiples puntos.
+4. Si hay jurisprudencia relevante, menciónala (número de sentencia, Corte, año).
+5. Cuando el contexto RAG contenga fragmentos relevantes, incorpóralos en tu análisis.
+6. Si la pregunta está fuera de tu especialización procesal colombiana, indícalo claramente.
+7. **Nunca** inventes normas, artículos o sentencias que no existan.
+
+## Aviso legal
+Eres una herramienta de orientación general. Recuerda siempre que no reemplazas la asesoría de un abogado habilitado conforme a la Ley 1123 de 2007.
+
+## Formato
+- Responde siempre en español.
+- Usa Markdown para formatear (negritas, listas, encabezados).
+- Sé conciso pero completo. Prefiere profundidad sobre longitud innecesaria.`;
+
+// ── Parámetros RAG ────────────────────────────────────────────
+const RAG_CONFIG = {
+  maxResults:  5,
+  maxChars:    4000,
+  minRank:     0.01,
+};
+
+// ── Límites de documentos por plan ───────────────────────────
+const DOC_SIZE_LIMITS = {
+  gratis:       0,
+  consultorio:  2  * 1024 * 1024,   // 2 MB
+  profesional:  10 * 1024 * 1024,   // 10 MB
+  firma:        100 * 1024 * 1024,  // 100 MB
+  admin:        500 * 1024 * 1024,  // 500 MB
+};
+
+// ── Mensajes de error amigables ───────────────────────────────
+const ERROR_MESSAGES = {
+  quota_exhausted:    '⚠️ Has agotado tu cuota mensual. <a href="planes.html">Actualiza tu plan →</a>',
+  account_suspended:  '⛔ Tu cuenta está suspendida. Contacta soporte.',
+  profile_not_found:  '❌ Perfil no encontrado. Intenta cerrar sesión y volver a ingresar.',
+  network_error:      '🌐 Error de conexión. Verifica tu internet e intenta de nuevo.',
+  provider_error:     '🤖 El proveedor de IA no respondió. Intenta en unos segundos.',
+  auth_error:         '🔐 Sesión expirada. Vuelve a iniciar sesión.',
+  doc_too_large:      '📄 El documento supera el límite de tu plan.',
+  doc_type_invalid:   '📎 Solo se aceptan archivos PDF, TXT, MD o DOCX.',
+};

@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Panel Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1B4FD8; --primary-light: #3B82F6;
+  --sidebar-bg: #0A1628; --sidebar-border: #142240;
+  --bg: #F0F4FC; --card: #FFFFFF; --text: #0F2545;
+  --text-soft: #4A6080; --text-muted: #8899AA; --border: #D4E0F0;
+  --gold: #C8960A; --gold-light: #F5C842;
+  --green: #0D9E6C; --red: #DC2626; --orange: #D97706;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 2px 12px rgba(27,79,216,0.08);
+  --sidebar-w: 240px;
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif; --font-mono: 'DM Mono', monospace;
+}
+html, body { height: 100%; font-family: var(--font-body); background: var(--bg); color: var(--text); overflow: hidden; }
+
+/* ── Layout ── */
+#sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border);
+  display: flex; flex-direction: column; padding: 24px 0; z-index: 100;
+  overflow-y: auto;
+}
+#main { margin-left: var(--sidebar-w); height: 100vh; overflow-y: auto; background: var(--bg); }
+.main-inner { padding: 32px 36px; max-width: 1200px; }
+
+/* ── Sidebar ── */
+.sb-brand {
+  padding: 0 20px 24px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 16px;
+}
+.sb-brand-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+.sb-brand-sub { font-size: 11px; color: #5A7AA8; margin-top: 2px; }
+.sb-admin-badge {
+  display: inline-block; background: rgba(200,150,10,0.15); color: var(--gold-light);
+  border: 1px solid rgba(200,150,10,0.25); font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; margin-top: 6px;
+}
+
+.nav-section { padding: 0 12px; margin-bottom: 4px; }
+.nav-section-label { font-size: 10px; font-weight: 700; color: #3A5272; text-transform: uppercase; letter-spacing: 1px; padding: 8px 8px 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm);
+  color: #8899AA; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all .2s; text-decoration: none; margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: rgba(27,79,216,0.25); color: var(--primary-light); }
+.nav-item .nav-icon { font-size: 16px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+}
+
+.sb-footer {
+  margin-top: auto; padding: 16px 12px 0; border-top: 1px solid var(--sidebar-border);
+}
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius-sm); }
+.sb-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(27,79,216,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--primary-light); flex-shrink: 0;
+}
+.sb-user-name { font-size: 13px; color: #fff; font-weight: 500; }
+.sb-user-role { font-size: 11px; color: #5A7AA8; }
+.btn-logout {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--radius-sm);
+  color: #5A7AA8; font-size: 13px; background: none; border: none; cursor: pointer;
+  width: 100%; transition: all .2s; margin-top: 4px;
+}
+.btn-logout:hover { color: var(--red); background: rgba(220,38,38,0.08); }
+
+/* ── Header page ── */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.page-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text); }
+.page-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.page-actions { display: flex; gap: 10px; }
+
+/* ── Panels ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Metrics cards ── */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.metric-card {
+  background: var(--card); border-radius: var(--radius); padding: 20px 22px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.metric-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--text); }
+.metric-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.metric-trend { font-size: 12px; margin-top: 4px; }
+.metric-trend.up { color: var(--green); }
+.metric-trend.down { color: var(--red); }
+
+/* ── Tabla ── */
+.table-card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px;
+}
+.table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+}
+.table-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.table-search {
+  height: 36px; padding: 0 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 13px; color: var(--text); background: var(--bg);
+  outline: none; width: 220px; transition: border-color .2s;
+}
+.table-search:focus { border-color: var(--primary); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.data-table td { padding: 12px 16px; font-size: 13px; color: var(--text-soft); border-bottom: 1px solid rgba(212,224,240,0.5); }
+.data-table tr:last-child td { border: none; }
+.data-table tr:hover td { background: rgba(240,244,252,0.8); }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: .3px;
+}
+.badge-green { background: #D1FAE5; color: #065F46; }
+.badge-blue { background: #DBEAFE; color: #1E40AF; }
+.badge-gold { background: #FEF3C7; color: #92400E; }
+.badge-red { background: #FEE2E2; color: #991B1B; }
+.badge-gray { background: #F3F4F6; color: #4B5563; }
+
+/* ── Buttons ── */
+.btn {
+  padding: 8px 16px; border-radius: var(--radius-sm); font-family: var(--font-body);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; border: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #1540B0; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #B91C1C; }
+.btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text-soft); }
+.btn-outline:hover { border-color: var(--primary-light); color: var(--primary); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; border-radius: 6px; transition: all .2s; }
+.btn-icon:hover { background: var(--bg); color: var(--text); }
+
+/* ── Config form ── */
+.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.config-card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  padding: 22px 24px; margin-bottom: 20px;
+}
+.config-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.form-input {
+  width: 100%; height: 40px; padding: 0 12px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fff; outline: none;
+  transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--primary); }
+select.form-input { font-family: var(--font-body); }
+.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* ── Stats mini chart (bar) ── */
+.mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 48px; margin-top: 10px; }
+.mini-bar { flex: 1; background: rgba(27,79,216,0.15); border-radius: 3px 3px 0 0; transition: background .2s; cursor: default; position: relative; }
+.mini-bar:hover { background: rgba(27,79,216,0.35); }
+.mini-bar-today { background: rgba(27,79,216,0.5) !important; }
+
+/* ── Alert ── */
+.alert-banner {
+  padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+}
+.alert-banner.success { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+.alert-banner.error { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.alert-banner.info { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+
+/* ── Plan quota bar ── */
+.quota-bar-wrap { background: var(--bg); border-radius: 4px; height: 6px; margin-top: 4px; overflow: hidden; }
+.quota-bar-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width .5s; }
+.quota-bar-fill.warn { background: var(--orange); }
+.quota-bar-fill.danger { background: var(--red); }
+
+/* ── Modal overlay ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,22,40,0.75); z-index: 200;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 500px; padding: 28px 32px;
+}
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--text-soft); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── Loading ── */
+.loading-row td { text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px; }
+
+/* ── Upload area ── */
+.upload-area {
+  border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 24px; text-align: center; cursor: pointer; transition: all .2s;
+  color: var(--text-muted); font-size: 13px;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--primary-light); color: var(--primary); background: rgba(27,79,216,0.03); }
+.upload-progress { margin-top: 12px; }
+.progress-bar-wrap { background: var(--bg); border-radius: 4px; height: 8px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 4px; background: var(--primary); transition: width .3s; }
+.progress-text { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+@media (max-width: 900px) {
+  #sidebar { transform: translateX(-100%); transition: transform .3s; }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+  .main-inner { padding: 20px; }
+  .config-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:22px">⚖️</span>
+      <div>
+        <div class="sb-brand-name">LEGALI</div>
+        <div class="sb-brand-sub">Asistente Jurídico</div>
+      </div>
+    </div>
+    <div class="sb-admin-badge">ADMIN</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Principal</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPanel('usuarios')" id="nav-usuarios">
+      <span class="nav-icon">👥</span> Usuarios
+      <span class="nav-badge" id="pendingBadge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('biblioteca')" id="nav-biblioteca">
+      <span class="nav-icon">📚</span> Biblioteca jurídica
+    </div>
+  </div>
+
+  <div class="nav-section" style="margin-top:8px">
+    <div class="nav-section-label">Sistema</div>
+    <div class="nav-item" onclick="showPanel('config')" id="nav-config">
+      <span class="nav-icon">⚙️</span> Configuración IA
+    </div>
+    <div class="nav-item" onclick="showPanel('billing')" id="nav-billing">
+      <span class="nav-icon">💳</span> Pagos / Planes
+    </div>
+    <div class="nav-item" onclick="showPanel('logs')" id="nav-logs">
+      <span class="nav-icon">📋</span> Logs de uso
+    </div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="adminAvatar">A</div>
+      <div>
+        <div class="sb-user-name" id="adminName">Admin</div>
+        <div class="sb-user-role">Administrador</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">🚪 Cerrar sesión</button>
+    <a class="nav-item" href="../usuario.html" style="margin-top:4px">
+      <span class="nav-icon">💬</span> Ir al chat
+    </a>
+  </div>
+</aside>
+
+<!-- Main -->
+<main id="main">
+  <div class="main-inner">
+
+    <!-- ── PANEL: Dashboard ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📊 Dashboard</div>
+          <div class="page-sub" id="dashDate">—</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div id="alertBanner"></div>
+
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card">
+          <div class="metric-label">Usuarios totales</div>
+          <div class="metric-value" id="m-total">—</div>
+          <div class="metric-sub" id="m-total-sub">cargando...</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Usuarios activos (mes)</div>
+          <div class="metric-value" id="m-active">—</div>
+          <div class="metric-sub" id="m-active-sub">con al menos 1 consulta</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Consultas hoy</div>
+          <div class="metric-value" id="m-queries">—</div>
+          <div class="metric-sub" id="m-queries-sub">en el último día</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ingresos mes</div>
+          <div class="metric-value" id="m-revenue">—</div>
+          <div class="metric-sub" id="m-revenue-sub">USD estimado</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Docs en biblioteca</div>
+          <div class="metric-value" id="m-docs">—</div>
+          <div class="metric-sub">documentos jurídicos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Distribución planes</div>
+          <div class="metric-sub" id="m-plans" style="font-size:12px;margin-top:8px;line-height:1.8">cargando...</div>
+        </div>
+      </div>
+
+      <!-- Consultas últimos 7 días -->
+      <div class="table-card" style="padding:20px 24px">
+        <div class="table-title" style="margin-bottom:12px">📈 Consultas — últimos 7 días</div>
+        <div class="mini-chart" id="weekChart"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text-muted)" id="weekLabels"></div>
+      </div>
+
+      <!-- Usuarios recientes -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">👥 Usuarios recientes</div>
+          <button class="btn btn-outline btn-sm" onclick="showPanel('usuarios')">Ver todos →</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Plan</th>
+              <th>Consultas usadas</th>
+              <th>Registro</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="recentUsers">
+            <tr class="loading-row"><td colspan="5">Cargando usuarios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PANEL: Usuarios ── -->
+    <div class="panel" id="panel-usuarios">
+      <div class="page-header">
+        <div>
+          <div class="page-title">👥 Gestión de usuarios</div>
+          <div class="page-sub" id="usersCount">—</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadUsers()">↻ Actualizar</button>
+          <button class="btn btn-primary btn-sm" onclick="openCreateUser()">+ Nuevo usuario</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Todos los usuarios</div>
+          <input class="table-search" id="userSearch" placeholder="🔍 Buscar por nombre o email..." oninput="filterUsers()"/>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Plan</th>
+              <th>Cuota usada</th>
+              <th>Registro</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable">
+            <tr class="loading-row"><td colspan="7">Cargando...</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: Biblioteca ── -->
+    <div class="panel" id="panel-biblioteca">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📚 Biblioteca jurídica</div>
+          <div class="page-sub">Documentos disponibles para todos los usuarios vía RAG</div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="config-card">
+        <div class="config-card-title">📤 Subir documento</div>
+        <div class="upload-area" id="libUploadArea" onclick="document.getElementById('libFileInput').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleLibDrop(event)">
+          <input type="file" id="libFileInput" accept=".pdf,.txt,.md" style="display:none" multiple onchange="handleLibFiles(this.files)"/>
+          <div>📄 Arrastra aquí o haz clic para subir PDFs, TXT o MD</div>
+          <div style="font-size:11px;margin-top:4px;color:var(--text-muted)">Máximo 50 MB por archivo</div>
+        </div>
+
+        <div id="libUploadMeta" style="display:none;margin-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Categoría</label>
+              <select id="libCategory" class="form-input">
+                <option value="CGP">CGP — Código General del Proceso</option>
+                <option value="CPACA">CPACA — Contencioso Administrativo</option>
+                <option value="CPP">CPP — Código de Procedimiento Penal</option>
+                <option value="CPL">CPL — Código Procesal Laboral</option>
+                <option value="Jurisprudencia">Jurisprudencia</option>
+                <option value="Doctrina">Doctrina — ICDP</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL de origen (opcional)</label>
+              <input type="url" id="libSource" class="form-input" placeholder="https://..."/>
+            </div>
+          </div>
+          <div id="libProgress" style="display:none" class="upload-progress">
+            <div class="progress-bar-wrap"><div class="progress-bar" id="libProgressBar" style="width:0%"></div></div>
+            <div class="progress-text" id="libProgressText">Procesando...</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button class="btn btn-primary" id="btnLibUpload" onclick="uploadLibDocs()">✅ Subir a biblioteca</button>
+            <button class="btn btn-outline" onclick="cancelLibUpload()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Documentos en biblioteca</div>
+          <input class="table-search" id="libSearch" placeholder="🔍 Buscar documentos..." oninput="filterLibDocs()"/>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Páginas</th>
+              <th>Tamaño</th>
+              <th>Subido</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="libTable">
+            <tr class="loading-row"><td colspan="6">Cargando biblioteca...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PANEL: Config IA ── -->
+    <div class="panel" id="panel-config">
+      <div class="page-header">
+        <div>
+          <div class="page-title">⚙️ Configuración de IA</div>
+          <div class="page-sub">API keys y modelos por plan. Estas keys se usan en el backend — nunca se exponen al usuario.</div>
+        </div>
+      </div>
+
+      <div class="alert-banner info" style="display:flex">
+        🔐 Las API keys se guardan cifradas en Supabase Vault / variables de entorno de la Edge Function.
+        <strong style="margin-left:4px">Nunca en el frontend.</strong>
+      </div>
+
+      <div class="config-grid">
+        <div class="config-card">
+          <div class="config-card-title">🤖 Groq (plan Gratis)</div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" id="cfg-groq-key" class="form-input" placeholder="gsk_..."/>
+            <div class="form-hint">Obtener en console.groq.com/keys — gratis hasta 14,400 req/día</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <select id="cfg-groq-model" class="form-input">
+              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (recomendado)</option>
+              <option value="llama3-8b-8192">llama3-8b-8192 (más rápido)</option>
+              <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProviderConfig('groq')">Guardar Groq</button>
+        </div>
+
+        <div class="config-card">
+          <div class="config-card-title">🧠 Anthropic (planes Pro y Firma)</div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" id="cfg-anthropic-key" class="form-input" placeholder="sk-ant-api03-..."/>
+            <div class="form-hint">Obtener en console.anthropic.com</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo Plan Profesional</label>
+            <select id="cfg-anthropic-model-pro" class="form-input">
+              <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (recomendado)</option>
+              <option value="claude-haiku-4-5-20251001">Claude Haiku (económico)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo Plan Firma</label>
+            <select id="cfg-anthropic-model-firma" class="form-input">
+              <option value="claude-opus-4-6">Claude Opus 4.6</option>
+              <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProviderConfig('anthropic')">Guardar Anthropic</button>
+        </div>
+
+        <div class="config-card">
+          <div class="config-card-title">🟢 OpenAI (plan Consultorio)</div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" id="cfg-openai-key" class="form-input" placeholder="sk-proj-..."/>
+            <div class="form-hint">Obtener en platform.openai.com</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <select id="cfg-openai-model" class="form-input">
+              <option value="gpt-4o-mini">gpt-4o-mini (recomendado — económico)</option>
+              <option value="gpt-4o">gpt-4o</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProviderConfig('openai')">Guardar OpenAI</button>
+        </div>
+
+        <div class="config-card">
+          <div class="config-card-title">🔵 Límites de cuota por plan</div>
+          <div class="form-group">
+            <label class="form-label">Plan Gratis — consultas/mes</label>
+            <input type="number" id="cfg-quota-gratis" class="form-input" value="5" min="1"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plan Consultorio</label>
+            <input type="number" id="cfg-quota-cons" class="form-input" value="50" min="1"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plan Profesional</label>
+            <input type="number" id="cfg-quota-pro" class="form-input" value="200" min="1"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plan Firma (0 = ilimitado)</label>
+            <input type="number" id="cfg-quota-firma" class="form-input" value="0" min="0"/>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveQuotaConfig()">Guardar cuotas</button>
+        </div>
+      </div>
+
+      <div id="configAlert"></div>
+    </div>
+
+    <!-- ── PANEL: Pagos ── -->
+    <div class="panel" id="panel-billing">
+      <div class="page-header">
+        <div>
+          <div class="page-title">💳 Pagos y suscripciones</div>
+          <div class="page-sub">Historial de transacciones y estado de suscripciones</div>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Ingresos mes actual</div>
+          <div class="metric-value" id="b-revenue">$0</div>
+          <div class="metric-sub" id="b-revenue-sub">USD</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Suscripciones activas</div>
+          <div class="metric-value" id="b-active">0</div>
+          <div class="metric-sub">planes de pago</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Nuevas este mes</div>
+          <div class="metric-value" id="b-new">0</div>
+          <div class="metric-sub">suscripciones</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cancelaciones</div>
+          <div class="metric-value" id="b-cancel">0</div>
+          <div class="metric-sub">este mes</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Historial de pagos</div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Plan</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Referencia</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTable">
+            <tr class="loading-row"><td colspan="6">Cargando pagos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PANEL: Logs ── -->
+    <div class="panel" id="panel-logs">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📋 Logs de uso</div>
+          <div class="page-sub">Registro de consultas y actividad del sistema</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadLogs()">↻ Actualizar</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Últimas consultas</div>
+          <input class="table-search" id="logSearch" placeholder="🔍 Buscar usuario o proveedor..." oninput="filterLogs()"/>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Proveedor</th>
+              <th>Modelo</th>
+              <th>Tokens aprox.</th>
+              <th>Consulta (resumen)</th>
+            </tr>
+          </thead>
+          <tbody id="logsTable">
+            <tr class="loading-row"><td colspan="6">Cargando logs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main-inner -->
+</main>
+
+<!-- Modal editar usuario -->
+<div class="modal-overlay" id="modalUser">
+  <div class="modal-box">
+    <div class="modal-title" id="modalUserTitle">Editar usuario</div>
+    <div class="modal-sub">Modifica el plan y estado del usuario</div>
+    <input type="hidden" id="modalUserId"/>
+    <div class="form-group">
+      <label class="form-label">Nombre completo</label>
+      <input type="text" id="modalUserName" class="form-input"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plan</label>
+      <select id="modalUserPlan" class="form-input">
+        <option value="gratis">Gratis</option>
+        <option value="consultorio">Consultorio ($9/mes)</option>
+        <option value="profesional">Profesional ($25/mes)</option>
+        <option value="firma">Firma / Juzgado ($79/mes)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estado</label>
+      <select id="modalUserActive" class="form-input">
+        <option value="true">Activo</option>
+        <option value="false">Suspendido</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nota interna (opcional)</label>
+      <input type="text" id="modalUserNote" class="form-input" placeholder="Ej: Plan cortesía, suspendido por pago..."/>
+    </div>
+    <div id="modalUserAlert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalUser')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminar -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal-box">
+    <div class="modal-title">⚠️ Confirmar acción</div>
+    <div class="modal-sub" id="modalConfirmText">¿Estás seguro?</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalConfirm')">Cancelar</button>
+      <button class="btn btn-danger" id="modalConfirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Supabase ────────────────────────────────────────────────
+const SUPABASE_URL = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Auth guard ───────────────────────────────────────────────
+let ADMIN_USER = null;
+(async function checkAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return window.location.href = '../login.html';
+
+  const { data: profile } = await sb.from('legali_profiles')
+    .select('nombre, apellido, plan, active')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (!profile || profile.plan !== 'admin') {
+    await sb.auth.signOut();
+    return window.location.href = '../login.html';
+  }
+
+  ADMIN_USER = { ...session.user, ...profile };
+  const initials = ((profile.nombre?.[0] || '') + (profile.apellido?.[0] || '')).toUpperCase() || 'A';
+  document.getElementById('adminAvatar').textContent = initials;
+  document.getElementById('adminName').textContent = profile.nombre || 'Admin';
+
+  loadDashboard();
+})();
+
+// ── Navigation ───────────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('nav-' + name)?.classList.add('active');
+
+  // Lazy load
+  if (name === 'usuarios') loadUsers();
+  if (name === 'biblioteca') loadLibrary();
+  if (name === 'billing') loadBilling();
+  if (name === 'logs') loadLogs();
+}
+
+// ── Dashboard ────────────────────────────────────────────────
+async function loadDashboard() {
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  try {
+    // Total usuarios
+    const { count: totalUsers } = await sb.from('legali_profiles').select('*', { count: 'exact', head: true });
+    document.getElementById('m-total').textContent = totalUsers ?? 0;
+    document.getElementById('m-total-sub').textContent = 'registrados en total';
+
+    // Por plan
+    const { data: planData } = await sb.from('legali_profiles')
+      .select('plan')
+      .neq('plan', 'admin');
+
+    const planCounts = {};
+    planData?.forEach(u => { planCounts[u.plan] = (planCounts[u.plan] || 0) + 1; });
+    document.getElementById('m-plans').innerHTML = Object.entries(planCounts)
+      .map(([k, v]) => `<span style="display:block"><strong>${v}</strong> ${k}</span>`)
+      .join('');
+
+    // Estimación de ingresos
+    const prices = { gratis: 0, consultorio: 9, profesional: 25, firma: 79 };
+    let revenue = 0;
+    planData?.forEach(u => { revenue += prices[u.plan] || 0; });
+    document.getElementById('m-revenue').textContent = '$' + revenue;
+    document.getElementById('m-revenue-sub').textContent = 'USD estimado mensual';
+
+    // Consultas hoy
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const { count: todayQ } = await sb.from('conversations')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString())
+      .eq('role', 'user');
+    document.getElementById('m-queries').textContent = todayQ ?? 0;
+
+    // Docs biblioteca
+    const { count: libCount } = await sb.from('legal_documents').select('*', { count: 'exact', head: true });
+    document.getElementById('m-docs').textContent = libCount ?? 0;
+
+    // Usuarios activos
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const { data: activeSessions } = await sb.from('conversations')
+      .select('session_id')
+      .gte('created_at', monthStart.toISOString())
+      .eq('role', 'user');
+    const uniqueSessions = new Set(activeSessions?.map(r => r.session_id));
+    document.getElementById('m-active').textContent = uniqueSessions.size;
+
+    // Mini chart — últimos 7 días
+    renderWeekChart();
+
+    // Usuarios recientes
+    const { data: recentUsers } = await sb.from('legali_profiles')
+      .select('id, nombre, apellido, email, plan, quota_used, quota_total, active, created_at')
+      .neq('plan', 'admin')
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    const tbody = document.getElementById('recentUsers');
+    tbody.innerHTML = recentUsers?.length
+      ? recentUsers.map(u => userRow(u)).join('')
+      : '<tr class="loading-row"><td colspan="5">Sin usuarios aún</td></tr>';
+
+  } catch (e) {
+    showAlert('alertBanner', 'Error cargando datos: ' + e.message, 'error');
+  }
+}
+
+async function renderWeekChart() {
+  const chart = document.getElementById('weekChart');
+  const labels = document.getElementById('weekLabels');
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+    days.push(d);
+  }
+  const counts = await Promise.all(days.map(async (d) => {
+    const end = new Date(d); end.setDate(end.getDate() + 1);
+    const { count } = await sb.from('conversations')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', d.toISOString())
+      .lt('created_at', end.toISOString())
+      .eq('role', 'user');
+    return count || 0;
+  }));
+
+  const max = Math.max(...counts, 1);
+  chart.innerHTML = counts.map((c, i) =>
+    `<div class="mini-bar ${i === 6 ? 'mini-bar-today' : ''}" style="height:${Math.round(c / max * 100)}%" title="${c} consultas"></div>`
+  ).join('');
+  labels.innerHTML = days.map((d, i) =>
+    `<span>${i === 6 ? 'Hoy' : d.toLocaleDateString('es', { weekday: 'short' })}</span>`
+  ).join('');
+}
+
+// ── Usuarios ─────────────────────────────────────────────────
+let allUsers = [];
+
+async function loadUsers() {
+  const { data, error } = await sb.from('legali_profiles')
+    .select('*').neq('plan', 'admin').order('created_at', { ascending: false });
+
+  if (error) return;
+  allUsers = data || [];
+  document.getElementById('usersCount').textContent = allUsers.length + ' usuarios registrados';
+  renderUsers(allUsers);
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('usersTable');
+  if (!users.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin usuarios</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${u.nombre || ''} ${u.apellido || ''}</strong><br/><span style="font-size:11px;color:var(--text-muted)">${u.profesion || ''}</span></td>
+      <td>${u.email}</td>
+      <td>${planBadge(u.plan)}</td>
+      <td>
+        <div>${u.quota_used || 0} / ${u.quota_total === 9999 ? '∞' : u.quota_total || 0}</div>
+        <div class="quota-bar-wrap" style="width:100px">
+          <div class="quota-bar-fill ${quotaColor(u.quota_used, u.quota_total)}" style="width:${quotaPct(u.quota_used, u.quota_total)}%"></div>
+        </div>
+      </td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td>${u.active ? '<span class="badge badge-green">Activo</span>' : '<span class="badge badge-red">Suspendido</span>'}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openEditUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">✏️</button>
+        <button class="btn btn-outline btn-sm" onclick="resetQuota('${u.id}')">↺</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  const filtered = allUsers.filter(u =>
+    (u.nombre + ' ' + u.apellido + ' ' + u.email).toLowerCase().includes(q)
+  );
+  renderUsers(filtered);
+}
+
+function openEditUser(u) {
+  document.getElementById('modalUserId').value = u.id;
+  document.getElementById('modalUserName').value = (u.nombre || '') + ' ' + (u.apellido || '');
+  document.getElementById('modalUserPlan').value = u.plan || 'gratis';
+  document.getElementById('modalUserActive').value = String(u.active !== false);
+  document.getElementById('modalUserNote').value = u.nota || '';
+  document.getElementById('modalUserTitle').textContent = 'Editar: ' + u.email;
+  document.getElementById('modalUserAlert').innerHTML = '';
+  openModal('modalUser');
+}
+
+async function saveUser() {
+  const id = document.getElementById('modalUserId').value;
+  const nameParts = document.getElementById('modalUserName').value.trim().split(' ');
+  const plan = document.getElementById('modalUserPlan').value;
+  const active = document.getElementById('modalUserActive').value === 'true';
+  const nota = document.getElementById('modalUserNote').value;
+  const PLAN_QUOTAS = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999 };
+  const PLAN_PROVIDERS = { gratis: 'groq', consultorio: 'openai', profesional: 'anthropic', firma: 'anthropic' };
+  const PLAN_LABELS = { gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado' };
+
+  const { error } = await sb.from('legali_profiles').update({
+    nombre: nameParts[0] || '',
+    apellido: nameParts.slice(1).join(' ') || '',
+    plan, active, nota,
+    plan_label: PLAN_LABELS[plan],
+    provider_assigned: PLAN_PROVIDERS[plan],
+    quota_total: PLAN_QUOTAS[plan],
+  }).eq('id', id);
+
+  if (error) {
+    document.getElementById('modalUserAlert').innerHTML = `<div class="alert-banner error">${error.message}</div>`;
+    return;
+  }
+  closeModal('modalUser');
+  loadUsers();
+  if (document.getElementById('panel-dashboard').classList.contains('active')) loadDashboard();
+}
+
+function openCreateUser() {
+  document.getElementById('modalUserId').value = '';
+  document.getElementById('modalUserName').value = '';
+  document.getElementById('modalUserPlan').value = 'gratis';
+  document.getElementById('modalUserActive').value = 'true';
+  document.getElementById('modalUserNote').value = '';
+  document.getElementById('modalUserTitle').textContent = 'Crear usuario manualmente';
+  openModal('modalUser');
+}
+
+async function resetQuota(userId) {
+  const { error } = await sb.from('legali_profiles').update({ quota_used: 0 }).eq('id', userId);
+  if (!error) loadUsers();
+}
+
+// ── Biblioteca ───────────────────────────────────────────────
+let allLibDocs = [], pendingLibFiles = [];
+
+async function loadLibrary() {
+  const { data } = await sb.from('legal_documents')
+    .select('id, name, category, source, pages, file_size, created_at')
+    .order('created_at', { ascending: false });
+  allLibDocs = data || [];
+  renderLibDocs(allLibDocs);
+}
+
+function renderLibDocs(docs) {
+  const tbody = document.getElementById('libTable');
+  if (!docs.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Sin documentos en biblioteca</td></tr>';
+    return;
+  }
+  tbody.innerHTML = docs.map(d => `
+    <tr>
+      <td><strong>${d.name}</strong>${d.source ? `<br/><a href="${d.source}" target="_blank" style="font-size:11px;color:var(--primary-light)">Ver fuente</a>` : ''}</td>
+      <td><span class="badge badge-blue">${d.category || 'General'}</span></td>
+      <td>${d.pages || '—'}</td>
+      <td>${d.file_size ? (d.file_size / 1024).toFixed(0) + ' KB' : '—'}</td>
+      <td>${fmtDate(d.created_at)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteLibDoc('${d.id}', '${d.name.replace(/'/g,"\\'")}')">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+function filterLibDocs() {
+  const q = document.getElementById('libSearch').value.toLowerCase();
+  renderLibDocs(allLibDocs.filter(d => d.name.toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q)));
+}
+
+function handleLibDrop(e) {
+  e.preventDefault();
+  document.getElementById('libUploadArea').classList.remove('drag');
+  handleLibFiles(e.dataTransfer.files);
+}
+
+function handleLibFiles(files) {
+  pendingLibFiles = Array.from(files);
+  if (!pendingLibFiles.length) return;
+  document.getElementById('libUploadArea').querySelector('div').textContent = '📄 ' + pendingLibFiles.map(f => f.name).join(', ');
+  document.getElementById('libUploadMeta').style.display = 'block';
+}
+
+async function uploadLibDocs() {
+  if (!pendingLibFiles.length) return;
+  const category = document.getElementById('libCategory').value;
+  const source = document.getElementById('libSource').value.trim();
+  const btn = document.getElementById('btnLibUpload');
+  const progress = document.getElementById('libProgress');
+  const bar = document.getElementById('libProgressBar');
+  const text = document.getElementById('libProgressText');
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+
+  for (let i = 0; i < pendingLibFiles.length; i++) {
+    const file = pendingLibFiles[i];
+    text.textContent = `Procesando ${file.name}... (${i + 1}/${pendingLibFiles.length})`;
+    bar.style.width = Math.round((i / pendingLibFiles.length) * 100) + '%';
+    try {
+      let content = '';
+      if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        content = await file.text();
+      } else if (file.name.endsWith('.pdf')) {
+        content = await extractPdfText(file);
+      }
+      if (!content.trim()) { text.textContent = `⚠️ Sin texto extraíble: ${file.name}`; continue; }
+
+      const { error } = await sb.from('legal_documents').insert({
+        name: file.name.replace(/\.[^.]+$/, ''),
+        content, category, source: source || null,
+        file_size: file.size,
+      });
+      if (error) throw error;
+    } catch (e) {
+      text.textContent = `❌ Error: ${e.message}`;
+    }
+  }
+
+  bar.style.width = '100%';
+  text.textContent = '✅ Subida completada';
+  btn.disabled = false;
+  setTimeout(() => cancelLibUpload(), 1500);
+  loadLibrary();
+}
+
+function cancelLibUpload() {
+  pendingLibFiles = [];
+  document.getElementById('libUploadMeta').style.display = 'none';
+  document.getElementById('libProgress').style.display = 'none';
+  document.getElementById('libProgressBar').style.width = '0%';
+  document.getElementById('libUploadArea').querySelector('div').textContent = '📄 Arrastra aquí o haz clic para subir PDFs, TXT o MD';
+}
+
+async function deleteLibDoc(id, name) {
+  document.getElementById('modalConfirmText').textContent = `¿Eliminar "${name}" de la biblioteca?`;
+  document.getElementById('modalConfirmBtn').onclick = async () => {
+    await sb.from('legal_documents').delete().eq('id', id);
+    closeModal('modalConfirm');
+    loadLibrary();
+  };
+  openModal('modalConfirm');
+}
+
+// ── Config ───────────────────────────────────────────────────
+async function saveProviderConfig(provider) {
+  // Guarda en legali_config (tabla de configuración del sistema)
+  const keys = {
+    groq: { key: document.getElementById('cfg-groq-key')?.value, model: document.getElementById('cfg-groq-model')?.value },
+    anthropic: { key: document.getElementById('cfg-anthropic-key')?.value, model_pro: document.getElementById('cfg-anthropic-model-pro')?.value, model_firma: document.getElementById('cfg-anthropic-model-firma')?.value },
+    openai: { key: document.getElementById('cfg-openai-key')?.value, model: document.getElementById('cfg-openai-model')?.value },
+  };
+  const cfg = keys[provider];
+  if (!cfg) return;
+
+  // En producción real: guardar en Supabase Vault o en variables de entorno de la Edge Function
+  // Aquí guardamos el modelo (seguro) en la tabla de config; la key va al Edge Function env
+  const { error } = await sb.from('legali_config').upsert({ key: 'provider_' + provider, value: JSON.stringify(cfg) }, { onConflict: 'key' });
+  const alertEl = document.getElementById('configAlert');
+  alertEl.innerHTML = error
+    ? `<div class="alert-banner error">${error.message}</div>`
+    : `<div class="alert-banner success">✅ Config de ${provider} guardada correctamente.</div>`;
+  setTimeout(() => alertEl.innerHTML = '', 3000);
+}
+
+async function saveQuotaConfig() {
+  const quotas = {
+    gratis: parseInt(document.getElementById('cfg-quota-gratis').value) || 5,
+    consultorio: parseInt(document.getElementById('cfg-quota-cons').value) || 50,
+    profesional: parseInt(document.getElementById('cfg-quota-pro').value) || 200,
+    firma: parseInt(document.getElementById('cfg-quota-firma').value) || 0,
+  };
+  const { error } = await sb.from('legali_config').upsert({ key: 'plan_quotas', value: JSON.stringify(quotas) }, { onConflict: 'key' });
+  const alertEl = document.getElementById('configAlert');
+  alertEl.innerHTML = error
+    ? `<div class="alert-banner error">${error.message}</div>`
+    : `<div class="alert-banner success">✅ Cuotas guardadas.</div>`;
+  setTimeout(() => alertEl.innerHTML = '', 3000);
+}
+
+// ── Billing ──────────────────────────────────────────────────
+async function loadBilling() {
+  const { data: subs } = await sb.from('legali_profiles')
+    .select('plan, created_at').neq('plan', 'gratis').neq('plan', 'admin');
+  const prices = { consultorio: 9, profesional: 25, firma: 79 };
+  let revenue = 0;
+  (subs || []).forEach(s => revenue += prices[s.plan] || 0);
+  document.getElementById('b-revenue').textContent = '$' + revenue;
+  document.getElementById('b-active').textContent = subs?.length || 0;
+
+  const { data: payments } = await sb.from('legali_payments')
+    .select('*, legali_profiles(nombre,apellido,email)')
+    .order('created_at', { ascending: false }).limit(50);
+
+  const tbody = document.getElementById('paymentsTable');
+  if (!payments?.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Sin pagos registrados aún</td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => `
+    <tr>
+      <td>${fmtDate(p.created_at)}</td>
+      <td>${p.legali_profiles?.email || '—'}</td>
+      <td>${planBadge(p.plan)}</td>
+      <td><strong>$${p.amount} USD</strong></td>
+      <td>${p.status === 'approved' ? '<span class="badge badge-green">Aprobado</span>' : '<span class="badge badge-red">'+p.status+'</span>'}</td>
+      <td><span style="font-family:var(--font-mono);font-size:11px">${p.reference || '—'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── Logs ────────────────────────────────────────────────────
+let allLogs = [];
+
+async function loadLogs() {
+  const { data } = await sb.from('conversations')
+    .select('created_at, session_id, provider, model, content, role')
+    .eq('role', 'user')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  allLogs = data || [];
+  renderLogs(allLogs);
+}
+
+function renderLogs(logs) {
+  const tbody = document.getElementById('logsTable');
+  if (!logs.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Sin logs</td></tr>'; return; }
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td>${fmtDateTime(l.created_at)}</td>
+      <td><span style="font-family:var(--font-mono);font-size:11px">${l.session_id?.slice(0, 8)}...</span></td>
+      <td><span class="badge badge-blue">${l.provider || '—'}</span></td>
+      <td style="font-size:11px">${l.model || '—'}</td>
+      <td>${Math.round((l.content?.length || 0) / 4)}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.content?.slice(0, 80) || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function filterLogs() {
+  const q = document.getElementById('logSearch').value.toLowerCase();
+  renderLogs(allLogs.filter(l => (l.provider + l.model + l.session_id).toLowerCase().includes(q)));
+}
+
+// ── PDF extract (reutilizado del app.js) ─────────────────────
+async function extractPdfText(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        if (!window.pdfjsLib) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+          document.head.appendChild(script);
+          await new Promise(r => script.onload = r);
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+        const pdf = await window.pdfjsLib.getDocument({ data: e.target.result }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        resolve(text);
+      } catch { resolve(''); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function userRow(u) {
+  return `<tr>
+    <td><strong>${u.nombre || ''} ${u.apellido || ''}</strong></td>
+    <td>${planBadge(u.plan)}</td>
+    <td>${u.quota_used || 0} / ${u.quota_total === 9999 ? '∞' : u.quota_total || 0}</td>
+    <td>${fmtDate(u.created_at)}</td>
+    <td>${u.active !== false ? '<span class="badge badge-green">Activo</span>' : '<span class="badge badge-red">Suspendido</span>'}</td>
+  </tr>`;
+}
+
+function planBadge(plan) {
+  const map = { gratis: 'badge-gray', consultorio: 'badge-blue', profesional: 'badge-gold', firma: 'badge-green', admin: 'badge-red' };
+  return `<span class="badge ${map[plan] || 'badge-gray'}">${plan || '—'}</span>`;
+}
+
+function quotaPct(used, total) {
+  if (!total || total === 9999) return 0;
+  return Math.min(100, Math.round((used || 0) / total * 100));
+}
+
+function quotaColor(used, total) {
+  const pct = quotaPct(used, total);
+  if (pct >= 90) return 'danger';
+  if (pct >= 70) return 'warn';
+  return '';
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function showAlert(id, msg, type = 'info') {
+  document.getElementById(id).innerHTML = `<div class="alert-banner ${type}">${msg}</div>`;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function doLogout() {
+  await sb.auth.signOut();
+  window.location.href = '../login.html';
+}
+
+// Cerrar modales al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+</body>
+</html>

@@ -1,249 +1,175 @@
-// ════════════════════════════════════════════════════════════
-// LEGALI — Proveedores de IA (streaming)
-// Equivalente a providers/*.py
-// Todos usan fetch con ReadableStream para streaming real
-// ════════════════════════════════════════════════════════════
+// ============================================================
+// LEGALI v2.0 — js/providers.js
+// Streaming vía proxy Edge Function. Sin API keys en frontend.
+// ============================================================
 
-// ── Utilidad: leer stream de texto ─────────────────────────
+'use strict';
 
-async function* streamTextChunks(response) {
-  const reader  = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+// Modo desarrollo: simula respuesta sin llamar al proxy
+const DEV_MODE = false;
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // Partir por líneas SSE (data: ...)
-    const lines = buffer.split("\n");
-    buffer = lines.pop(); // la última línea puede estar incompleta
-
-    for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        const raw = line.slice(6).trim();
-        if (raw === "[DONE]") return;
-        yield raw;
-      }
-    }
+// ── Stream principal ──────────────────────────────────────────
+/**
+ * @param {Object}   opts
+ * @param {Array}    opts.messages       Array { role, content }
+ * @param {string}   opts.provider       'groq' | 'openai' | 'anthropic'
+ * @param {string}   opts.model          Nombre del modelo
+ * @param {string}   [opts.systemPrompt] System prompt completo
+ * @param {Function} opts.onChunk        Callback(chunk: string)
+ * @param {Function} [opts.onDone]       Callback(fullText: string)
+ * @param {Function} [opts.onError]      Callback(error: Error)
+ * @returns {Promise<string>}            Texto completo generado
+ */
+async function streamProvider({ messages, provider, model, systemPrompt, onChunk, onDone, onError }) {
+  if (DEV_MODE) {
+    return _devModeResponse(onChunk, onDone);
   }
-}
 
-// ── GROQ ────────────────────────────────────────────────────
-// Documentación: https://console.groq.com/docs/libraries
+  // Obtener JWT de sesión
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session?.access_token) {
+    const err = new Error(ERROR_MESSAGES.auth_error);
+    if (onError) onError(err);
+    throw err;
+  }
 
-async function* streamGroq(messages, model, apiKey) {
-  const body = {
-    model,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map(m => ({ role: m.role, content: m.content })),
-    ],
-    max_tokens: 2048,
-    temperature: 0.7,
-    stream: true,
-  };
+  let fullText = '';
 
-  let response;
   try {
-    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch(AI_PROXY_URL, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    yield `\n\n🌐 **Error de conexión con Groq:** ${e.message}`;
-    return;
-  }
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    yield `\n\n❌ **Error Groq ${response.status}:** ${err?.error?.message || response.statusText}`;
-    return;
-  }
-
-  for await (const raw of streamTextChunks(response)) {
-    try {
-      const data = JSON.parse(raw);
-      const token = data?.choices?.[0]?.delta?.content;
-      if (token) yield token;
-    } catch { /* fragmento parcial, ignorar */ }
-  }
-}
-
-// ── ANTHROPIC ───────────────────────────────────────────────
-// Documentación: https://docs.anthropic.com/en/api/messages-streaming
-// NOTA: La API de Anthropic no permite llamadas directas desde el navegador
-// (bloqueo CORS). Para producción, usa un backend proxy (Cloudflare Worker,
-// Vercel Edge Function, etc.) o usa el proveedor Groq/OpenAI directamente.
-// Se incluye aquí para referencia y uso en entornos con proxy configurado.
-
-async function* streamAnthropic(messages, model, apiKey, proxyUrl = null) {
-  const endpoint = proxyUrl || "https://api.anthropic.com/v1/messages";
-
-  const body = {
-    model,
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
-    messages: messages.map(m => ({ role: m.role, content: m.content })),
-    stream: true,
-  };
-
-  let response;
-  try {
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    yield `\n\n🌐 **Error de conexión con Anthropic:** ${e.message}  \n**Nota:** Anthropic bloquea llamadas directas desde navegadores (CORS). Configura un proxy en \`js/app.js\` → \`ANTHROPIC_PROXY_URL\`.`;
-    return;
-  }
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    if (response.status === 401) {
-      yield "\n\n❌ **API Key de Anthropic inválida.** Verifica en [console.anthropic.com](https://console.anthropic.com)";
-    } else {
-      yield `\n\n❌ **Error Anthropic ${response.status}:** ${err?.error?.message || response.statusText}`;
-    }
-    return;
-  }
-
-  for await (const raw of streamTextChunks(response)) {
-    try {
-      const data = JSON.parse(raw);
-      if (data.type === "content_block_delta" && data.delta?.text) {
-        yield data.delta.text;
-      } else if (data.type === "content_block_start" && data.content_block?.type === "tool_use") {
-        yield "\n\n🔍 *Buscando información actualizada…*\n\n";
-      }
-    } catch { /* parcial */ }
-  }
-}
-
-// ── OPENAI ──────────────────────────────────────────────────
-
-async function* streamOpenAI(messages, model, apiKey) {
-  const body = {
-    model,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map(m => ({ role: m.role, content: m.content })),
-    ],
-    max_tokens: 2048,
-    temperature: 0.7,
-    stream: true,
-  };
-
-  let response;
-  try {
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    yield `\n\n🌐 **Error de conexión con OpenAI:** ${e.message}`;
-    return;
-  }
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    if (response.status === 401) {
-      yield "\n\n❌ **API Key de OpenAI inválida.** Verifica en [platform.openai.com](https://platform.openai.com)";
-    } else {
-      yield `\n\n❌ **Error OpenAI ${response.status}:** ${err?.error?.message || response.statusText}`;
-    }
-    return;
-  }
-
-  for await (const raw of streamTextChunks(response)) {
-    try {
-      const data = JSON.parse(raw);
-      const token = data?.choices?.[0]?.delta?.content;
-      if (token) yield token;
-    } catch { /* parcial */ }
-  }
-}
-
-// ── GOOGLE GEMINI ───────────────────────────────────────────
-// Usa la REST API de Gemini con streaming (SSE)
-
-async function* streamGoogle(messages, model, apiKey) {
-  // Convertir historial al formato de Gemini
-  const geminiMessages = messages.map(m => ({
-    role: m.role === "user" ? "user" : "model",
-    parts: [{ text: m.content }],
-  }));
-
-  // El system prompt se inyecta como primer turno de "model" en Gemini REST
-  const contents = [
-    { role: "user",  parts: [{ text: "Actúa como LEGALI según el siguiente system prompt:" }] },
-    { role: "model", parts: [{ text: SYSTEM_PROMPT }] },
-    ...geminiMessages,
-  ];
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
-
-  let response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
+        provider,
+        model,
+        system_prompt: systemPrompt || SYSTEM_PROMPT,
+        messages,
       }),
     });
+
+    // Manejo de errores HTTP
+    if (!response.ok) {
+      let reason = 'provider_error';
+      try {
+        const body = await response.json();
+        reason = body.reason || reason;
+      } catch (_) {}
+
+      const msg = response.status === 402
+        ? ERROR_MESSAGES.quota_exhausted
+        : response.status === 401
+        ? ERROR_MESSAGES.auth_error
+        : response.status === 403
+        ? ERROR_MESSAGES.account_suspended
+        : ERROR_MESSAGES.provider_error;
+
+      const err = new Error(msg);
+      err.status = response.status;
+      err.reason = reason;
+      if (onError) onError(err);
+      throw err;
+    }
+
+    // Parsear SSE
+    const reader  = response.body.getReader();
+    const decoder = new TextDecoder();
+    let   buffer  = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // última línea puede estar incompleta
+
+      for (const line of lines) {
+        const chunk = _parseSseLine(line, provider);
+        if (chunk === '[DONE]') break;
+        if (chunk) {
+          fullText += chunk;
+          if (onChunk) onChunk(chunk);
+        }
+      }
+    }
+
+    // Procesar buffer restante
+    if (buffer.trim()) {
+      const chunk = _parseSseLine(buffer, provider);
+      if (chunk && chunk !== '[DONE]') {
+        fullText += chunk;
+        if (onChunk) onChunk(chunk);
+      }
+    }
+
+    if (onDone) onDone(fullText);
+    return fullText;
+
   } catch (e) {
-    yield `\n\n🌐 **Error de conexión con Gemini:** ${e.message}`;
-    return;
-  }
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    yield `\n\n❌ **Error Google Gemini ${response.status}:** ${err?.error?.message || response.statusText}`;
-    return;
-  }
-
-  for await (const raw of streamTextChunks(response)) {
-    try {
-      const data = JSON.parse(raw);
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) yield text;
-    } catch { /* parcial */ }
+    if (!e.status) {
+      // Error de red
+      const networkErr = new Error(ERROR_MESSAGES.network_error);
+      if (onError) onError(networkErr);
+      throw networkErr;
+    }
+    throw e;
   }
 }
 
-// ── Dispatcher principal ────────────────────────────────────
+// ── Parser de líneas SSE ──────────────────────────────────────
+function _parseSseLine(line, provider) {
+  if (!line.startsWith('data:')) return null;
 
-const ANTHROPIC_PROXY_URL = "https://legali-proxy.sebas20031314.workers.dev"; // Configura aquí tu proxy si usas Anthropic
-// Ejemplo: "https://mi-worker.mi-usuario.workers.dev/anthropic"
+  const raw = line.slice(5).trim();
+  if (raw === '[DONE]') return '[DONE]';
+  if (!raw) return null;
 
-async function* streamProvider(provider, messages, apiKey, model) {
-  switch (provider) {
-    case "groq":      yield* streamGroq(messages, model, apiKey);      break;
-    case "anthropic": yield* streamAnthropic(messages, model, apiKey, ANTHROPIC_PROXY_URL); break;
-    case "openai":    yield* streamOpenAI(messages, model, apiKey);    break;
-    case "google":    yield* streamGoogle(messages, model, apiKey);    break;
-    default:
-      yield `❌ Proveedor "${provider}" no configurado.`;
+  try {
+    const json = JSON.parse(raw);
+
+    // Formato OpenAI / Groq
+    if (json.choices?.[0]?.delta?.content !== undefined) {
+      return json.choices[0].delta.content;
+    }
+
+    // Formato Anthropic
+    if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+      return json.delta.text;
+    }
+    if (json.type === 'message_delta' || json.type === 'message_stop') {
+      return null;
+    }
+
+    // Formato normalizado del proxy (fallback)
+    if (typeof json.text === 'string') {
+      return json.text;
+    }
+
+    return null;
+  } catch (_) {
+    return null;
   }
+}
+
+// ── Modo desarrollo ───────────────────────────────────────────
+async function _devModeResponse(onChunk, onDone) {
+  const response = 'DEV MODE: El proxy de IA no está configurado. ' +
+    'Sube la Edge Function `ai-proxy` a Supabase para activar el chat real. ' +
+    'Ver instrucciones en `supabase/functions/ai-proxy/index.ts`.';
+
+  const words = response.split(' ');
+  let full = '';
+
+  for (const word of words) {
+    await new Promise(r => setTimeout(r, 40));
+    const chunk = word + ' ';
+    full += chunk;
+    if (onChunk) onChunk(chunk);
+  }
+
+  if (onDone) onDone(full.trim());
+  return full.trim();
 }

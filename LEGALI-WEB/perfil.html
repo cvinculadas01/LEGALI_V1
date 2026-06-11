@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Mi Perfil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1B4FD8; --primary-light: #3B82F6; --primary-glow: rgba(59,130,246,0.18);
+  --sidebar-bg: #0A1628; --sidebar-border: #142240;
+  --bg: #0D1B2E; --surface: #111F35; --surface-2: #162640; --card: #162640;
+  --text: #E8EFF8; --text-soft: #94A8C0; --text-muted: #5A7AA8;
+  --border: rgba(59,130,246,0.15);
+  --gold: #C8960A; --gold-light: #F5C842;
+  --green: #0D9E6C; --red: #DC2626;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif; --font-mono: 'DM Mono', monospace;
+}
+html, body { min-height: 100%; font-family: var(--font-body); background: var(--bg); color: var(--text); }
+
+/* ── Nav top ── */
+.topnav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  background: rgba(10,22,40,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-brand-icon { font-size: 22px; }
+.nav-brand-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #fff; }
+.nav-actions { display: flex; align-items: center; gap: 12px; }
+.nav-link { color: var(--text-muted); font-size: 14px; text-decoration: none; transition: color .2s; }
+.nav-link:hover { color: #fff; }
+.btn-back {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 14px;
+  color: var(--text-soft); font-size: 13px; text-decoration: none;
+  transition: all .2s;
+}
+.btn-back:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* ── Layout ── */
+.page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+.page-title {
+  font-family: var(--font-display); font-size: 26px; font-weight: 700;
+  margin-bottom: 4px; color: #fff;
+}
+.page-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+}
+.card-title {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  color: #fff; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* ── Avatar ── */
+.profile-header {
+  display: flex; align-items: center; gap: 18px; margin-bottom: 20px;
+}
+.avatar-big {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--primary); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 24px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.profile-meta h2 { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.profile-meta p  { font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* ── Plan badge ── */
+.plan-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: var(--primary-light);
+}
+.plan-badge.gratis      { background: rgba(88,103,120,0.15); border-color: #374151; color: #9CA3AF; }
+.plan-badge.consultorio { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #60A5FA; }
+.plan-badge.profesional { background: rgba(200,150,10,0.15); border-color: rgba(200,150,10,0.3); color: var(--gold-light); }
+.plan-badge.firma       { background: rgba(13,158,108,0.15); border-color: rgba(13,158,108,0.3); color: #34D399; }
+
+/* ── Quota bar ── */
+.quota-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.quota-label { font-size: 13px; color: var(--text-soft); }
+.quota-value { font-size: 13px; font-weight: 600; color: #fff; font-family: var(--font-mono); }
+.quota-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+.quota-bar-fill { height: 100%; border-radius: 6px; background: var(--primary-light); transition: width .6s ease; }
+.quota-bar-fill.warn   { background: #D97706; }
+.quota-bar-fill.danger { background: var(--red); }
+.quota-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+
+/* ── Info rows ── */
+.info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.info-row:last-child { border-bottom: none; }
+.info-key   { font-size: 13px; color: var(--text-muted); }
+.info-value { font-size: 13px; color: #fff; font-weight: 500; text-align: right; }
+.info-value.mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-soft); }
+
+/* ── Formulario cambio de contraseña ── */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase; }
+.form-input {
+  width: 100%; padding: 10px 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm); color: #fff;
+  font-family: var(--font-body); font-size: 14px; outline: none;
+  transition: border-color .2s, background .2s;
+}
+.form-input:focus { border-color: var(--primary-light); background: rgba(59,130,246,0.08); }
+.form-input::placeholder { color: rgba(255,255,255,0.2); }
+
+/* ── Buttons ── */
+.btn-primary {
+  padding: 11px 22px; border: none; border-radius: var(--radius-sm);
+  background: var(--primary); color: #fff;
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .2s, transform .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary:hover:not(:disabled) { background: var(--primary-light); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-gold {
+  padding: 11px 22px; border: 1px solid var(--gold); border-radius: var(--radius-sm);
+  background: rgba(200,150,10,0.1); color: var(--gold-light);
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-gold:hover { background: rgba(200,150,10,0.2); }
+
+.btn-danger {
+  padding: 9px 18px; border: 1px solid rgba(220,38,38,0.4); border-radius: var(--radius-sm);
+  background: rgba(220,38,38,0.1); color: #FCA5A5;
+  font-size: 13px; cursor: pointer; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-danger:hover { background: rgba(220,38,38,0.2); }
+
+/* ── Alerts ── */
+.alert { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-top: 14px; display: none; }
+.alert.show { display: block; }
+.alert-success { background: rgba(13,158,108,0.12); border: 1px solid rgba(13,158,108,0.3); color: #6EE7B7; }
+.alert-error   { background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.3); color: #FCA5A5; }
+
+/* ── Spinner ── */
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+.spinner.show { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Skeleton loader ── */
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; height: 16px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .topnav { padding: 12px 16px; }
+  .page   { padding: 24px 16px 60px; }
+  .profile-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="topnav">
+  <a class="nav-brand" href="usuario.html">
+    <span class="nav-brand-icon">⚖️</span>
+    <span class="nav-brand-name">LEGALI</span>
+  </a>
+  <div class="nav-actions">
+    <a class="btn-back" href="usuario.html">← Volver al chat</a>
+  </div>
+</nav>
+
+<div class="page">
+  <h1 class="page-title">Mi Perfil</h1>
+  <p class="page-subtitle" id="subEmail">Cargando información...</p>
+
+  <!-- ── Card: Información de cuenta ─────────────────────── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">👤</span> Información de cuenta</div>
+
+    <div class="profile-header">
+      <div class="avatar-big" id="avatarBig">?</div>
+      <div class="profile-meta">
+        <h2 id="profileName">—</h2>
+        <p id="profileEmail">—</p>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <span class="info-key">Plan activo</span>
+      <span class="info-value"><span class="plan-badge" id="planBadge">—</span></span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Estado de cuenta</span>
+      <span class="info-value" id="accountStatus">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Miembro desde</span>
+      <span class="info-value" id="memberSince">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Renovación del plan</span>
+      <span class="info-value" id="planExpires">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Proveedor IA asignado</span>
+      <span class="info-value mono" id="providerAssigned">—</span>
+    </div>
+  </div>
+
+  <!-- ── Card: Cuota de consultas ────────────────────────── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔢</span> Cuota de consultas</div>
+
+    <div class="quota-row">
+      <span class="quota-label">Consultas usadas este mes</span>
+      <span class="quota-value" id="quotaText">—</span>
+    </div>
+    <div class="quota-bar-wrap">
+      <div class="quota-bar-fill" id="quotaBar" style="width:0%"></div>
+    </div>
+    <div class="quota-info">
+      <span id="quotaPct">—</span>
+      <a href="planes.html" style="color: var(--gold-light); text-decoration: none; font-weight:600;">Actualizar plan ↗</a>
+    </div>
+
+    <div style="margin-top: 18px;">
+      <a class="btn-gold" href="planes.html">⚡ Ver planes disponibles</a>
+    </div>
+  </div>
+
+  <!-- ── Card: Cambiar contraseña ────────────────────────── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔐</span> Cambiar contraseña</div>
+
+    <div class="form-group">
+      <label class="form-label" for="newPassword">Nueva contraseña</label>
+      <input class="form-input" type="password" id="newPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="confirmPassword">Confirmar nueva contraseña</label>
+      <input class="form-input" type="password" id="confirmPassword" placeholder="Repite la contraseña" autocomplete="new-password"/>
+    </div>
+
+    <button class="btn-primary" id="btnChangePassword" onclick="changePassword()">
+      <span class="spinner" id="spinnerPwd"></span>
+      🔒 Actualizar contraseña
+    </button>
+
+    <div class="alert alert-success" id="alertPwdOk">✅ Contraseña actualizada correctamente.</div>
+    <div class="alert alert-error"   id="alertPwdErr">❌ <span id="alertPwdErrMsg">Error al cambiar la contraseña.</span></div>
+  </div>
+
+  <!-- ── Card: Zona de peligro ───────────────────────────── -->
+  <div class="card" style="border-color: rgba(220,38,38,0.2);">
+    <div class="card-title" style="color: #FCA5A5;"><span class="icon">⚠️</span> Zona de peligro</div>
+    <p style="font-size:13px; color: var(--text-muted); margin-bottom:16px;">
+      Cerrar sesión en todos los dispositivos o eliminar tu cuenta. Estas acciones no se pueden deshacer.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn-danger" onclick="legaliLogout()">⎋ Cerrar sesión</button>
+      <button class="btn-danger" onclick="confirmDeleteAccount()" style="border-color:rgba(220,38,38,0.6);">🗑️ Eliminar cuenta</button>
+    </div>
+    <div class="alert alert-error" id="alertDelete"></div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── Supabase init ─────────────────────────────────────────────
+const SUPABASE_URL_P = "https://yqyjvyqchzhkvdpmozxt.supabase.co";
+const SUPABASE_KEY_P = "sb_publishable_c3MJmO4cZYJkeoxEPf6U_Q_2FFUfAUj";
+const sbProfile = supabase.createClient(SUPABASE_URL_P, SUPABASE_KEY_P);
+
+const PLAN_LABELS   = { gratis: 'Plan Gratis 🆓', consultorio: 'Consultorio ⚖️', profesional: 'Profesional 🏛️', firma: 'Firma / Juzgado 🏢', admin: 'Administrador 🛡️' };
+const PLAN_QUOTAS   = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999, admin: 9999 };
+const PROVIDER_LABELS = { groq: 'Groq — Llama 3.3', openai: 'OpenAI — GPT-4o mini', anthropic: 'Anthropic — Claude' };
+
+let currentSession = null;
+
+// ── Inicializar ───────────────────────────────────────────────
+(async function init() {
+  const { data: { session } } = await sbProfile.auth.getSession();
+  if (!session) return window.location.href = 'login.html';
+  currentSession = session;
+
+  const { data: profile, error } = await sbProfile
+    .from('legali_profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (!profile || !profile.active) {
+    await sbProfile.auth.signOut();
+    return window.location.href = 'login.html';
+  }
+
+  renderProfile(session, profile);
+})();
+
+function renderProfile(session, profile) {
+  // Subheader
+  document.getElementById('subEmail').textContent = session.user.email;
+
+  // Avatar
+  const initials = ((profile.nombre?.[0] || '') + (profile.apellido?.[0] || '')).toUpperCase() || '?';
+  document.getElementById('avatarBig').textContent = initials;
+
+  // Nombre y email
+  const fullName = [profile.nombre, profile.apellido].filter(Boolean).join(' ') || 'Sin nombre';
+  document.getElementById('profileName').textContent  = fullName;
+  document.getElementById('profileEmail').textContent = session.user.email;
+
+  // Plan badge
+  const badge = document.getElementById('planBadge');
+  badge.textContent = PLAN_LABELS[profile.plan] || profile.plan;
+  badge.className   = 'plan-badge ' + (profile.plan || 'gratis');
+
+  // Info rows
+  document.getElementById('accountStatus').textContent  = profile.active ? '✅ Activa' : '⛔ Suspendida';
+  document.getElementById('memberSince').textContent    = formatDate(profile.created_at);
+  document.getElementById('planExpires').textContent    = profile.plan_expires_at ? formatDate(profile.plan_expires_at) : (profile.plan === 'gratis' ? 'Plan sin vencimiento' : '—');
+  document.getElementById('providerAssigned').textContent = PROVIDER_LABELS[profile.provider_assigned] || profile.provider_assigned || '—';
+
+  // Cuota
+  const used        = profile.quota_used  || 0;
+  const total       = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
+  const isUnlimited = total === 9999;
+  const pct         = isUnlimited ? 0 : Math.min(100, Math.round(used / total * 100));
+
+  document.getElementById('quotaText').textContent = isUnlimited ? `${used} / ∞` : `${used} / ${total}`;
+  document.getElementById('quotaPct').textContent  = isUnlimited ? 'Sin límite de consultas' : `${pct}% usado`;
+
+  const bar = document.getElementById('quotaBar');
+  bar.style.width = (isUnlimited ? 0 : pct) + '%';
+  bar.className   = 'quota-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+}
+
+// ── Cambiar contraseña ────────────────────────────────────────
+async function changePassword() {
+  const newPwd  = document.getElementById('newPassword').value.trim();
+  const confPwd = document.getElementById('confirmPassword').value.trim();
+  const btn     = document.getElementById('btnChangePassword');
+  const spinner = document.getElementById('spinnerPwd');
+
+  hideAlert('alertPwdOk'); hideAlert('alertPwdErr');
+
+  if (!newPwd || newPwd.length < 8) {
+    return showAlert('alertPwdErr', 'La contraseña debe tener al menos 8 caracteres.');
+  }
+  if (newPwd !== confPwd) {
+    return showAlert('alertPwdErr', 'Las contraseñas no coinciden.');
+  }
+
+  btn.disabled = true; spinner.classList.add('show');
+
+  try {
+    const { error } = await sbProfile.auth.updateUser({ password: newPwd });
+    if (error) throw error;
+
+    showAlert('alertPwdOk');
+    document.getElementById('newPassword').value    = '';
+    document.getElementById('confirmPassword').value = '';
+  } catch (e) {
+    showAlert('alertPwdErr', e.message || 'Error al cambiar la contraseña.');
+  } finally {
+    btn.disabled = false; spinner.classList.remove('show');
+  }
+}
+
+// ── Eliminar cuenta ───────────────────────────────────────────
+async function confirmDeleteAccount() {
+  const confirmed = window.confirm(
+    '⚠️ ¿Estás seguro de que deseas eliminar tu cuenta?\n\n' +
+    'Esta acción eliminará todos tus datos y conversaciones.\n' +
+    'No se puede deshacer.'
+  );
+  if (!confirmed) return;
+
+  const confirmed2 = window.confirm('¿Confirmas definitivamente que quieres eliminar tu cuenta?');
+  if (!confirmed2) return;
+
+  try {
+    // Soft-delete: desactivar perfil
+    const { error } = await sbProfile
+      .from('legali_profiles')
+      .update({ active: false })
+      .eq('id', currentSession.user.id);
+
+    if (error) throw error;
+
+    await sbProfile.auth.signOut();
+    alert('Tu cuenta ha sido desactivada. Hasta pronto.');
+    window.location.href = 'login.html';
+  } catch (e) {
+    showAlert('alertDelete', '❌ Error al eliminar cuenta: ' + e.message);
+  }
+}
+
+// ── Logout ────────────────────────────────────────────────────
+async function legaliLogout() {
+  await sbProfile.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    return new Date(dateStr).toLocaleDateString('es-CO', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+  } catch { return dateStr; }
+}
+
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (msg) {
+    const msgEl = el.querySelector('span') || el;
+    if (el.querySelector('span')) el.querySelector('span').textContent = msg;
+    else el.textContent = msg;
+  }
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+function hideAlert(id) {
+  document.getElementById(id)?.classList.remove('show');
+}
+
+// Enter en campos de password
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && (
+    document.activeElement.id === 'newPassword' ||
+    document.activeElement.id === 'confirmPassword'
+  )) {
+    changePassword();
+  }
+});
+</script>
+</body>
+</html>
