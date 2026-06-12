@@ -272,6 +272,20 @@ function _buildMessageActions(content) {
   };
   actions.appendChild(btnCopy);
 
+  const btnPdf = document.createElement('button');
+  btnPdf.className = 'msg-action-btn';
+  btnPdf.title = 'Exportar conversación a PDF';
+  btnPdf.innerHTML = '📄';
+  btnPdf.onclick = () => exportPDF();
+  actions.appendChild(btnPdf);
+
+  const btnWord = document.createElement('button');
+  btnWord.className = 'msg-action-btn';
+  btnWord.title = 'Exportar conversación a Word';
+  btnWord.innerHTML = '📝';
+  btnWord.onclick = () => exportWord();
+  actions.appendChild(btnWord);
+
   return actions;
 }
 
