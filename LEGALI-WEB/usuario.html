@@ -67,15 +67,14 @@
   </div>
 
   <!-- Usuario info -->
-  <div class="user-info-bar" id="userInfoBar">
+  <a href="perfil.html" class="user-info-bar" id="userInfoBar" title="Mi perfil" style="text-decoration:none;cursor:pointer;">
     <div class="user-avatar" id="userAvatar">?</div>
     <div class="user-info-text">
       <div class="user-info-name" id="userDisplayName">Usuario</div>
       <div class="user-info-role" id="userPlanLabel">Cargando...</div>
     </div>
-    <a href="perfil.html" class="btn-logout" title="Mi perfil" style="display:flex;align-items:center;text-decoration:none;">⚙️</a>
-    <button class="btn-logout" onclick="legaliLogout()" title="Cerrar sesión">⎋</button>
-  </div>
+    <span style="font-size:13px;color:#5A7AA8;flex-shrink:0;">⚙️</span>
+  </a>
 
   <!-- Cuota de consultas -->
   <div class="quota-widget" id="quotaWidget" style="display:none">
