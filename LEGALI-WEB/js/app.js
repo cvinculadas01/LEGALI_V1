@@ -91,12 +91,27 @@ function _setupEventListeners() {
 }
 
 // ── Manejar envío de mensaje ──────────────────────────────────
+const MAX_MESSAGE_LENGTH = 6000; // caracteres
+
 async function handleSend() {
   const input = $('userInput');
   if (!input || STATE.isStreaming) return;
 
-  const text = input.value.trim();
+  let text = input.value.trim();
   if (!text) return;
+
+  // Sanitización básica: eliminar caracteres de control invisibles
+  // (excepto saltos de línea/tabulaciones) que podrían usarse para
+  // inyección o para confundir al modelo.
+  text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Límite de longitud para evitar abuso de costo en el ai-proxy
+  if (text.length > MAX_MESSAGE_LENGTH) {
+    _appendMessage('assistant',
+      `⚠️ Tu mensaje es demasiado largo (${text.length} caracteres). El máximo permitido es ${MAX_MESSAGE_LENGTH} caracteres.`,
+      true);
+    return;
+  }
 
   // Verificar cuota
   const quota = await checkQuota();
@@ -642,18 +657,40 @@ async function exportWord() {
 
 // ── Renderizar Markdown ───────────────────────────────────────
 function _renderMarkdown(text) {
+  let html;
   if (typeof marked !== 'undefined') {
     try {
-      return marked.parse(text, { breaks: true, gfm: true });
-    } catch (_) {}
+      html = marked.parse(text, { breaks: true, gfm: true });
+    } catch (_) {
+      html = _escapeHtml(text);
+    }
+  } else {
+    // Fallback básico
+    html = text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/`(.+?)`/g,'<code>$1</code>')
+      .replace(/\n/g,'<br/>');
   }
-  // Fallback básico
+
+  // Sanitizar el HTML resultante antes de insertarlo con innerHTML.
+  // Esto evita que contenido inyectado (vía documentos RAG o
+  // respuestas del modelo) ejecute scripts u otro HTML peligroso.
+  if (typeof DOMPurify !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p','br','strong','em','b','i','u','s','code','pre','blockquote',
+        'ul','ol','li','h1','h2','h3','h4','h5','h6','a','table','thead','tbody','tr','th','td','hr'],
+      ALLOWED_ATTR: ['href','target','rel'],
+    });
+  }
+  return html;
+}
+
+function _escapeHtml(text) {
   return text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/\n/g,'<br/>');
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ── Utilidades ────────────────────────────────────────────────
@@ -676,10 +713,6 @@ function _docIcon(filename) {
   if (filename.match(/\.pdf$/i))  return '📄';
   if (filename.match(/\.docx$/i)) return '📝';
   return '📃';
-}
-
-function _escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function _shuffle(arr) {

@@ -203,6 +203,22 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
       <div class="alert alert-info"  id="forgotInfo"></div>
     </div>
 
+    <!-- ── Panel: verificación MFA ── -->
+    <div id="mfaPanel" style="display:none">
+      <button class="back-btn" onclick="cancelMfa()">← Volver</button>
+      <div class="brand" style="margin-bottom:20px">
+        <div class="brand-name" style="font-size:22px">Verificación en dos pasos</div>
+        <div class="brand-sub">Ingresa el código de tu app de autenticación</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código de 6 dígitos</label>
+        <input type="text" id="mfaLoginCode" class="form-input" placeholder="000000" maxlength="6" inputmode="numeric"
+               onkeydown="if(event.key==='Enter') doMfaVerify()"/>
+      </div>
+      <button class="btn-login" id="btnMfaVerify" onclick="doMfaVerify()">Verificar</button>
+      <div class="alert alert-error" id="mfaError"></div>
+    </div>
+
     <div class="login-footer">LEGALI &copy; 2025 · Solo para usuarios autorizados</div>
   </div>
 </div>
@@ -255,7 +271,22 @@ function showForgot() {
 }
 function showMain() {
   document.getElementById('forgotPanel').style.display = 'none';
+  document.getElementById('mfaPanel').style.display = 'none';
   document.getElementById('mainForm').style.display = 'block';
+}
+
+function showMfaPanel() {
+  document.getElementById('mainForm').style.display = 'none';
+  document.getElementById('forgotPanel').style.display = 'none';
+  document.getElementById('mfaPanel').style.display = 'block';
+  document.getElementById('mfaLoginCode').value = '';
+  setTimeout(() => document.getElementById('mfaLoginCode').focus(), 50);
+}
+
+async function cancelMfa() {
+  // Cancelar = cerrar la sesión parcial (AAL1) y volver al login
+  await sb.auth.signOut();
+  showMain();
 }
 
 // ── Login con Supabase Auth ───────────────────────────────────
@@ -284,44 +315,104 @@ async function doLogin() {
       return;
     }
 
+    // ── Verificación MFA (AAL2) ────────────────────────────────
+    const { data: aalData, error: aalErr } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!aalErr && aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+      // El usuario tiene MFA activo pero aún no completó el segundo factor
+      _pendingBtn = btn;
+      showMfaPanel();
+      return;
+    }
+
     // Verificar perfil y rol
-    const { data: profile, error: pErr } = await sb.from('legali_profiles')
-      .select('plan, active, nombre').eq('id', data.user.id).maybeSingle();
-
-    if (pErr || !profile) {
-      showError('alertError', 'No se encontró tu perfil. Contacta soporte.');
-      await sb.auth.signOut();
-      btn.disabled = false; btn.innerHTML = 'Ingresar';
-      return;
-    }
-
-    if (!profile.active) {
-      showError('alertError', 'Tu cuenta está suspendida. Contacta soporte.');
-      await sb.auth.signOut();
-      btn.disabled = false; btn.innerHTML = 'Ingresar';
-      return;
-    }
-
-    const isAdmin = profile.plan === 'admin';
-    if (currentRole === 'admin' && !isAdmin) {
-      showError('alertError', 'Esta cuenta no tiene acceso de administrador.');
-      await sb.auth.signOut();
-      btn.disabled = false; btn.innerHTML = 'Ingresar';
-      return;
-    }
-    if (currentRole === 'user' && isAdmin) {
-      // Admin puede entrar igual al panel de usuario, redirigir a admin
-    }
-
-    showInfo('alertInfo', `Bienvenido, ${profile.nombre || ''}. Redirigiendo...`);
-    setTimeout(() => {
-      window.location.href = isAdmin ? 'admin/dashboard.html' : 'usuario.html';
-    }, 700);
+    await _completeLogin(data.user.id, btn);
 
   } catch (e) {
     showError('alertError', 'Error de conexión. Intenta de nuevo.');
     btn.disabled = false; btn.innerHTML = 'Ingresar';
   }
+}
+
+// ── Verificación del segundo factor (MFA / TOTP) ──────────────
+let _pendingBtn = null;
+
+async function doMfaVerify() {
+  const code = document.getElementById('mfaLoginCode').value.trim();
+  const errEl = document.getElementById('mfaError');
+  const btn = document.getElementById('btnMfaVerify');
+  errEl.classList.remove('show');
+
+  if (!/^\d{6}$/.test(code)) {
+    errEl.textContent = 'Ingresa el código de 6 dígitos.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Verificando...';
+
+  try {
+    const { data: factors, error: fErr } = await sb.auth.mfa.listFactors();
+    if (fErr) throw fErr;
+
+    const totp = (factors.totp || []).find(f => f.status === 'verified');
+    if (!totp) throw new Error('No se encontró un factor MFA verificado.');
+
+    const { data: challenge, error: chErr } = await sb.auth.mfa.challenge({ factorId: totp.id });
+    if (chErr) throw chErr;
+
+    const { error: verErr } = await sb.auth.mfa.verify({
+      factorId: totp.id,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verErr) throw verErr;
+
+    const { data: { session } } = await sb.auth.getSession();
+    await _completeLogin(session.user.id, _pendingBtn || btn);
+
+  } catch (e) {
+    errEl.textContent = '❌ Código incorrecto o expirado: ' + e.message;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Verificar';
+  }
+}
+
+// ── Finalizar login: verificar perfil, rol y redirigir ────────
+async function _completeLogin(userId, btn) {
+  const { data: profile, error: pErr } = await sb.from('legali_profiles')
+    .select('plan, active, nombre').eq('id', userId).maybeSingle();
+
+  if (pErr || !profile) {
+    showError('alertError', 'No se encontró tu perfil. Contacta soporte.');
+    await sb.auth.signOut();
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
+    showMain();
+    return;
+  }
+
+  if (!profile.active) {
+    showError('alertError', 'Tu cuenta está suspendida. Contacta soporte.');
+    await sb.auth.signOut();
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
+    showMain();
+    return;
+  }
+
+  const isAdmin = profile.plan === 'admin';
+  if (currentRole === 'admin' && !isAdmin) {
+    showError('alertError', 'Esta cuenta no tiene acceso de administrador.');
+    await sb.auth.signOut();
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
+    showMain();
+    return;
+  }
+
+  showInfo('alertInfo', `Bienvenido, ${profile.nombre || ''}. Redirigiendo...`);
+  setTimeout(() => {
+    window.location.href = isAdmin ? 'admin/dashboard.html' : 'usuario.html';
+  }, 700);
 }
 
 // ── Recuperar contraseña ──────────────────────────────────────

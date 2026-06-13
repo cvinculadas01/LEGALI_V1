@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Política de Tratamiento de Datos Personales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1B4FD8; --primary-light: #3B82F6; --sidebar-bg: #0A1628;
+  --bg: #F0F4FC; --card: #FFFFFF; --text: #0F2545; --text-soft: #4A6080;
+  --text-muted: #8899AA; --border: #D4E0F0; --gold: #C8960A; --gold-light: #F5C842;
+  --green: #0D9E6C; --red: #DC2626; --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(27,79,216,0.10);
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+}
+html, body { font-family: var(--font-body); background: var(--sidebar-bg); color: #fff; }
+
+.bg-pattern {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(27,79,216,0.22) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 80% 60%, rgba(200,150,10,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.nav {
+  position: relative; z-index: 10; display: flex; align-items: center;
+  justify-content: space-between; padding: 20px 40px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+.nav-brand-sub { font-size: 11px; color: #5A7AA8; }
+.nav-link { color: #8899AA; font-size: 14px; text-decoration: none; transition: color .2s; }
+.nav-link:hover { color: #fff; }
+
+.wrap {
+  position: relative; z-index: 1; max-width: 760px; margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+.doc-card {
+  background: var(--card); color: var(--text); border-radius: var(--radius);
+  padding: 40px; box-shadow: var(--shadow);
+}
+.doc-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.doc-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; }
+.doc-card h2 { font-family: var(--font-display); font-size: 18px; margin: 28px 0 10px; color: var(--primary); }
+.doc-card h2:first-of-type { margin-top: 0; }
+.doc-card p, .doc-card li { font-size: 14.5px; line-height: 1.7; color: var(--text-soft); margin-bottom: 10px; }
+.doc-card ul { padding-left: 22px; margin-bottom: 10px; }
+.doc-card strong { color: var(--text); }
+.back-link { display: inline-block; margin-top: 28px; color: var(--primary); font-size: 14px; text-decoration: none; font-weight: 600; }
+.contact-box {
+  margin-top: 24px; padding: 16px; border-radius: var(--radius-sm);
+  background: rgba(27,79,216,0.06); border: 1px solid var(--border);
+  font-size: 13.5px; color: var(--text-soft);
+}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+
+<nav class="nav">
+  <a href="planes.html" class="nav-brand">
+    <span style="font-size:24px;">⚖️</span>
+    <div>
+      <div class="nav-brand-name">LEGALI</div>
+      <div class="nav-brand-sub">Asistente Jurídico · Colombia</div>
+    </div>
+  </a>
+  <a href="register.html" class="nav-link">← Volver al registro</a>
+</nav>
+
+<div class="wrap">
+  <div class="doc-card">
+    <div class="doc-title">Política de Tratamiento de Datos Personales</div>
+    <div class="doc-meta">Versión 2026-06-v1 · Vigente desde el 12 de junio de 2026 · En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Colombia)</div>
+
+    <h2>1. Responsable del tratamiento</h2>
+    <p>LEGALI ("nosotros", "la Plataforma") es responsable del tratamiento de los datos personales que usted ("el Titular") nos suministra al registrarse y utilizar nuestros servicios de asistencia jurídica mediante inteligencia artificial.</p>
+
+    <h2>2. Datos que recolectamos</h2>
+    <ul>
+      <li><strong>Datos de identificación:</strong> nombre, apellido, correo electrónico, profesión u ocupación.</li>
+      <li><strong>Datos de uso:</strong> historial de consultas, conversaciones con el asistente, documentos cargados en sesión, plan contratado y consumo de cuota.</li>
+      <li><strong>Datos de pago:</strong> referencia de transacción, estado del pago y plan asociado. <strong>No almacenamos números de tarjeta ni datos financieros sensibles</strong>; estos son procesados directamente por nuestras pasarelas de pago (Wompi / MercadoPago).</li>
+      <li><strong>Datos técnicos:</strong> registros de auditoría (fecha, tipo de evento) para seguridad y soporte.</li>
+    </ul>
+
+    <h2>3. Finalidad del tratamiento</h2>
+    <ul>
+      <li>Crear y administrar su cuenta de usuario.</li>
+      <li>Prestar el servicio de asistencia jurídica mediante modelos de inteligencia artificial.</li>
+      <li>Gestionar planes, cuotas y procesar pagos.</li>
+      <li>Cumplir obligaciones legales, contables y de auditoría.</li>
+      <li>Enviar comunicaciones relacionadas con su cuenta y el servicio.</li>
+      <li>Mejorar la calidad y seguridad de la Plataforma.</li>
+    </ul>
+
+    <h2>4. Transferencia y transmisión internacional de datos</h2>
+    <p>Para generar respuestas, sus consultas son procesadas mediante proveedores de inteligencia artificial ubicados en el exterior (Groq Inc., OpenAI L.L.C. y Anthropic PBC, con servidores principalmente en Estados Unidos). Al utilizar el asistente, usted autoriza esta transmisión internacional, necesaria para la prestación del servicio. Estos proveedores actúan como Encargados del Tratamiento bajo sus respectivas políticas de privacidad y acuerdos de procesamiento de datos.</p>
+
+    <h2>5. Sus derechos como Titular (Habeas Data)</h2>
+    <p>De acuerdo con la Ley 1581 de 2012, usted tiene derecho a:</p>
+    <ul>
+      <li><strong>Conocer, actualizar y rectificar</strong> sus datos personales.</li>
+      <li><strong>Solicitar prueba de la autorización</strong> otorgada para el tratamiento de sus datos.</li>
+      <li><strong>Ser informado</strong> sobre el uso que se ha dado a sus datos.</li>
+      <li><strong>Presentar quejas</strong> ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</li>
+      <li><strong>Revocar la autorización y/o solicitar la supresión</strong> de sus datos, cuando no exista un deber legal o contractual que impida su eliminación.</li>
+      <li><strong>Acceder de forma gratuita</strong> a sus datos personales que hayan sido objeto de tratamiento.</li>
+    </ul>
+    <p>Puede ejercer los derechos de <strong>acceso (descargar mis datos)</strong> y <strong>supresión (eliminar mi cuenta)</strong> directamente desde la sección "Mi Perfil" de la Plataforma.</p>
+
+    <h2>6. Seguridad de la información</h2>
+    <p>Implementamos medidas técnicas y administrativas razonables para proteger sus datos contra acceso no autorizado, pérdida o alteración, incluyendo cifrado en tránsito (HTTPS/TLS), cifrado en reposo, controles de acceso basados en roles y políticas de seguridad a nivel de fila (RLS) en nuestra base de datos.</p>
+
+    <h2>7. Retención de datos</h2>
+    <p>Conservamos sus datos personales mientras su cuenta esté activa y por el tiempo adicional necesario para cumplir obligaciones legales, contables o de auditoría. Los registros de auditoría se conservan por un período máximo de 12 meses, salvo requerimiento legal en contrario.</p>
+
+    <h2>8. Vigencia</h2>
+    <p>Esta política rige a partir de su fecha de publicación y podrá ser modificada para reflejar cambios normativos, tecnológicos o en nuestros servicios. Los cambios significativos serán notificados a los usuarios.</p>
+
+    <div class="contact-box">
+      <strong>Contacto para ejercer sus derechos:</strong><br/>
+      Correo electrónico: <a href="mailto:soporte@legali.co" style="color:var(--primary);">soporte@legali.co</a><br/>
+      También puede gestionar directamente sus datos desde la sección "Mi Perfil" → "Mis Datos".
+    </div>
+
+    <a href="register.html" class="back-link">← Volver al registro</a>
+  </div>
+</div>
+
+</body>
+</html>

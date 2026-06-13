@@ -14,8 +14,11 @@ const PRICING = {
   firma:       { usd: 79, cop: 331800, annual_usd: 758, annual_cop: 3182400 },
 };
 
-// Wompi public key (reemplazar en producción)
-const WOMPI_PUBLIC_KEY = 'pub_test_XXX_REEMPLAZAR';
+// Wompi public key (sandbox).
+// Obtener en: https://comercios.wompi.co/ (cuenta sandbox gratuita)
+// Reemplazar por la llave de producción ("pub_prod_...") antes de
+// activar cuenta de comercio real (ver Punto 6 del plan).
+const WOMPI_PUBLIC_KEY = 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
 
 // ── Wompi Checkout ────────────────────────────────────────────
 async function initWompiCheckout(plan, period = 'monthly') {
@@ -52,7 +55,7 @@ async function initWompiCheckout(plan, period = 'monthly') {
     currency:              'COP',
     'amount-in-cents':     amountCents,
     reference,
-    'redirect-url':        `${window.location.origin}/usuario.html?payment=wompi&ref=${reference}`,
+    'redirect-url':        `${window.location.origin}/usuario.html?payment=wompi&ref=${reference}&pid=${payment.id}`,
     'customer-data:email': user.email,
   });
 
@@ -145,6 +148,7 @@ async function checkPaymentReturn() {
   const params   = new URLSearchParams(window.location.search);
   const provider = params.get('payment');
   const ref      = params.get('ref');
+  const pid      = params.get('pid');
 
   if (!provider || !ref) return;
 
@@ -154,7 +158,7 @@ async function checkPaymentReturn() {
 
   if (provider === 'wompi') {
     // Wompi redirección directa — consultar estado
-    await _pollPaymentStatus(ref, provider);
+    await _pollPaymentStatus(pid, provider);
   } else if (provider === 'mercadopago') {
     const status = params.get('collection_status') || params.get('status');
     if (status === 'approved') {
@@ -167,14 +171,15 @@ async function checkPaymentReturn() {
 }
 
 // ── Polling de estado de pago (Wompi) ────────────────────────
-async function _pollPaymentStatus(reference, provider, maxAttempts = 8) {
+async function _pollPaymentStatus(paymentId, provider, maxAttempts = 8) {
+  if (!paymentId) return;
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise(r => setTimeout(r, 2000));
 
     const { data } = await _sbPay
       .from('legali_payments')
       .select('status, plan')
-      .ilike('external_id', `%${reference}%`)
+      .eq('id', paymentId)
       .maybeSingle();
 
     if (data?.status === 'approved') {

@@ -286,6 +286,18 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
       </div>
     </div>
 
+    <div class="form-group full" style="display:flex; align-items:flex-start; gap:10px; margin-top: 4px;">
+      <input type="checkbox" id="inputConsent" style="margin-top:3px; width:16px; height:16px; flex-shrink:0; accent-color: var(--primary);"/>
+      <label for="inputConsent" style="font-size:12.5px; color: var(--text-soft); line-height:1.5; cursor:pointer;">
+        He leído y acepto la
+        <a href="privacidad.html" target="_blank" style="color: var(--primary); font-weight:600;">Política de Tratamiento de Datos Personales</a>
+        y los
+        <a href="terminos.html" target="_blank" style="color: var(--primary); font-weight:600;">Términos y Condiciones</a>.
+        Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012, incluyendo su
+        transferencia internacional a los proveedores de IA utilizados por LEGALI.
+      </label>
+    </div>
+
     <button class="btn-primary" id="btnStep1" onclick="goStep2()">
       Continuar — Elegir plan
     </button>
@@ -439,12 +451,17 @@ function goStep2() {
   if (pass.length < 8) return showAlert(err, 'La contraseña debe tener mínimo 8 caracteres.');
   if (!/[a-zA-Z]/.test(pass) || !/[0-9]/.test(pass)) return showAlert(err, 'La contraseña debe incluir letras y números.');
   if (pass !== pass2) return showAlert(err, 'Las contraseñas no coinciden.');
+  if (!document.getElementById('inputConsent').checked) {
+    return showAlert(err, 'Debes aceptar la Política de Tratamiento de Datos y los Términos y Condiciones para continuar.');
+  }
 
   err.classList.remove('show');
   setStep(2);
 }
 
 // ── Registro ─────────────────────────────────────────────────
+const CONSENT_VERSION = '2026-06-v1';
+
 async function doRegister() {
   const email    = document.getElementById('inputEmail').value.trim();
   const pass     = document.getElementById('inputPass').value;
@@ -491,6 +508,8 @@ async function doRegister() {
       quota_total: plan.quota,
       quota_used: 0,
       active: true,
+      consent_given_at: new Date().toISOString(),
+      consent_version: CONSENT_VERSION,
     });
 
     if (profileError) {

@@ -268,6 +268,60 @@ html, body { min-height: 100%; font-family: var(--font-body); background: var(--
     <div class="alert alert-error"   id="alertPwdErr">❌ <span id="alertPwdErrMsg">Error al cambiar la contraseña.</span></div>
   </div>
 
+  <!-- ── Card: Autenticación de dos factores (MFA) ──────────── -->
+  <div class="card" id="mfaCard" style="display:none;">
+    <div class="card-title"><span class="icon">📱</span> Autenticación de dos factores (MFA)</div>
+    <p style="font-size:13px; color: var(--text-muted); margin-bottom:16px;">
+      Como cuenta de administrador, te recomendamos proteger tu acceso con un segundo factor
+      mediante una app de autenticación (Google Authenticator, Authy, etc.).
+    </p>
+
+    <div id="mfaStatusView">
+      <div id="mfaNotEnrolled">
+        <button class="btn-primary" id="btnEnrollMfa" onclick="startMfaEnroll()" style="width:auto;">
+          ➕ Activar MFA
+        </button>
+      </div>
+      <div id="mfaEnrolled" style="display:none;">
+        <p style="font-size:13px; color: var(--green); margin-bottom:12px;">✅ MFA activo en esta cuenta.</p>
+        <button class="btn-danger" onclick="unenrollMfa()" style="width:auto;">🗑️ Desactivar MFA</button>
+      </div>
+    </div>
+
+    <!-- Panel de inscripción (QR + código) -->
+    <div id="mfaEnrollPanel" style="display:none; margin-top:16px;">
+      <p style="font-size:13px; color: var(--text-soft); margin-bottom:10px;">
+        Escanea este código QR con tu app de autenticación y luego ingresa el código de 6 dígitos:
+      </p>
+      <div id="mfaQrContainer" style="background:#fff; padding:12px; border-radius:var(--radius-sm); display:inline-block; margin-bottom:12px;"></div>
+      <div class="form-group">
+        <label class="form-label" for="mfaCode">Código de verificación</label>
+        <input class="form-input" type="text" id="mfaCode" placeholder="000000" maxlength="6" inputmode="numeric"/>
+      </div>
+      <button class="btn-primary" onclick="confirmMfaEnroll()" style="width:auto;">Confirmar y activar</button>
+    </div>
+
+    <div class="alert alert-success" id="alertMfaOk">✅ Operación de MFA realizada correctamente.</div>
+    <div class="alert alert-error" id="alertMfaErr"></div>
+  </div>
+
+  <!-- ── Card: Mis Datos (Ley 1581 de 2012) ──────────────── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔒</span> Mis datos personales</div>
+    <p style="font-size:13px; color: var(--text-muted); margin-bottom:16px;">
+      Conforme a la Ley 1581 de 2012 (Habeas Data), puedes acceder a una copia de tus datos
+      o solicitar su eliminación en cualquier momento. Consulta nuestra
+      <a href="privacidad.html" target="_blank" style="color: var(--gold-light); font-weight:600;">Política de Tratamiento de Datos</a>.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn-primary" id="btnExportData" onclick="exportMyData()" style="width:auto;">
+        <span class="spinner" id="spinnerExport"></span>
+        ⬇️ Descargar mis datos (JSON)
+      </button>
+    </div>
+    <div class="alert alert-error" id="alertExport"></div>
+  </div>
+
   <!-- ── Card: Zona de peligro ───────────────────────────── -->
   <div class="card" style="border-color: rgba(220,38,38,0.2);">
     <div class="card-title" style="color: #FCA5A5;"><span class="icon">⚠️</span> Zona de peligro</div>
@@ -276,7 +330,7 @@ html, body { min-height: 100%; font-family: var(--font-body); background: var(--
     </p>
     <div style="display:flex; gap:12px; flex-wrap:wrap;">
       <button class="btn-danger" onclick="legaliLogout()">⎋ Cerrar sesión</button>
-      <button class="btn-danger" onclick="confirmDeleteAccount()" style="border-color:rgba(220,38,38,0.6);">🗑️ Eliminar cuenta</button>
+      <button class="btn-danger" onclick="confirmDeleteAccount()" style="border-color:rgba(220,38,38,0.6);">🗑️ Eliminar cuenta y mis datos</button>
     </div>
     <div class="alert alert-error" id="alertDelete"></div>
   </div>
@@ -313,6 +367,11 @@ let currentSession = null;
   }
 
   renderProfile(session, profile);
+
+  if (profile.plan === 'admin') {
+    document.getElementById('mfaCard').style.display = '';
+    refreshMfaStatus();
+  }
 })();
 
 function renderProfile(session, profile) {
@@ -386,28 +445,151 @@ async function changePassword() {
 }
 
 // ── Eliminar cuenta ───────────────────────────────────────────
+// ── MFA (TOTP) — solo admins ────────────────────────────────────
+let _mfaEnrollFactorId = null;
+
+async function refreshMfaStatus() {
+  try {
+    const { data, error } = await sbProfile.auth.mfa.listFactors();
+    if (error) throw error;
+
+    const verified = (data.totp || []).find(f => f.status === 'verified');
+    document.getElementById('mfaNotEnrolled').style.display = verified ? 'none' : '';
+    document.getElementById('mfaEnrolled').style.display    = verified ? '' : 'none';
+    if (verified) _mfaEnrollFactorId = verified.id;
+  } catch (e) {
+    console.warn('mfa.listFactors error:', e.message);
+  }
+}
+
+async function startMfaEnroll() {
+  hideAlert('alertMfaErr');
+  try {
+    const { data, error } = await sbProfile.auth.mfa.enroll({ factorType: 'totp' });
+    if (error) throw error;
+
+    _mfaEnrollFactorId = data.id;
+
+    // data.totp.qr_code es un SVG data URI listo para usar
+    document.getElementById('mfaQrContainer').innerHTML =
+      `<img src="${data.totp.qr_code}" alt="Código QR MFA" width="180" height="180"/>`;
+    document.getElementById('mfaEnrollPanel').style.display = '';
+  } catch (e) {
+    showAlert('alertMfaErr', '❌ Error al iniciar MFA: ' + e.message);
+  }
+}
+
+async function confirmMfaEnroll() {
+  hideAlert('alertMfaErr');
+  const code = document.getElementById('mfaCode').value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    return showAlert('alertMfaErr', 'Ingresa el código de 6 dígitos de tu app de autenticación.');
+  }
+
+  try {
+    const { data: challenge, error: chErr } = await sbProfile.auth.mfa.challenge({ factorId: _mfaEnrollFactorId });
+    if (chErr) throw chErr;
+
+    const { error: verErr } = await sbProfile.auth.mfa.verify({
+      factorId: _mfaEnrollFactorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (verErr) throw verErr;
+
+    document.getElementById('mfaEnrollPanel').style.display = 'none';
+    document.getElementById('mfaCode').value = '';
+    showAlert('alertMfaOk', '✅ MFA activado correctamente.');
+    await refreshMfaStatus();
+  } catch (e) {
+    showAlert('alertMfaErr', '❌ Código incorrecto o expirado: ' + e.message);
+  }
+}
+
+async function unenrollMfa() {
+  hideAlert('alertMfaErr');
+  if (!_mfaEnrollFactorId) return;
+  if (!window.confirm('¿Desactivar la autenticación de dos factores en esta cuenta?')) return;
+
+  try {
+    const { error } = await sbProfile.auth.mfa.unenroll({ factorId: _mfaEnrollFactorId });
+    if (error) throw error;
+    showAlert('alertMfaOk', '✅ MFA desactivado.');
+    await refreshMfaStatus();
+  } catch (e) {
+    showAlert('alertMfaErr', '❌ Error al desactivar MFA: ' + e.message);
+  }
+}
+
+// ── Exportar mis datos (Ley 1581 — derecho de acceso) ──────────
+async function exportMyData() {
+  const btn = document.getElementById('btnExportData');
+  const spinner = document.getElementById('spinnerExport');
+  const alertEl = document.getElementById('alertExport');
+  alertEl.classList.remove('show');
+
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  try {
+    const { data, error } = await sbProfile.rpc('export_my_data');
+    if (error) throw error;
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `legali_mis_datos_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showAlert('alertExport', '❌ Error al exportar tus datos: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+// ── Eliminar cuenta (Ley 1581 — derecho de supresión) ──────────
 async function confirmDeleteAccount() {
   const confirmed = window.confirm(
     '⚠️ ¿Estás seguro de que deseas eliminar tu cuenta?\n\n' +
-    'Esta acción eliminará todos tus datos y conversaciones.\n' +
-    'No se puede deshacer.'
+    'Esto eliminará permanentemente tu perfil, conversaciones, documentos de sesión ' +
+    'e historial de pagos. Esta acción NO se puede deshacer.'
   );
   if (!confirmed) return;
 
-  const confirmed2 = window.confirm('¿Confirmas definitivamente que quieres eliminar tu cuenta?');
+  const confirmed2 = window.confirm('¿Confirmas definitivamente que quieres eliminar tu cuenta y todos tus datos?');
   if (!confirmed2) return;
 
   try {
-    // Soft-delete: desactivar perfil
-    const { error } = await sbProfile
-      .from('legali_profiles')
-      .update({ active: false })
-      .eq('id', currentSession.user.id);
+    // 1. Borra todos los datos de negocio del usuario (perfil + cascada:
+    //    conversations, session_documents, legal_memory, legali_payments, audit_logs)
+    const { error: rpcError } = await sbProfile.rpc('delete_my_account_data');
+    if (rpcError) throw rpcError;
 
-    if (error) throw error;
+    // 2. Borra el usuario de Supabase Auth mediante Edge Function
+    //    (requiere service_role, no se puede hacer desde el frontend)
+    const { data: { session } } = await sbProfile.auth.getSession();
+    if (session) {
+      try {
+        await fetch(`${SUPABASE_URL_P}/functions/v1/delete-account`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      } catch (edgeErr) {
+        console.warn('delete-account edge function warning:', edgeErr);
+        // No bloquear: los datos de negocio ya fueron eliminados.
+      }
+    }
 
     await sbProfile.auth.signOut();
-    alert('Tu cuenta ha sido desactivada. Hasta pronto.');
+    alert('Tu cuenta y todos tus datos han sido eliminados permanentemente. Hasta pronto.');
     window.location.href = 'login.html';
   } catch (e) {
     showAlert('alertDelete', '❌ Error al eliminar cuenta: ' + e.message);

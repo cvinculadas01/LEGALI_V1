@@ -1,0 +1,62 @@
+# ============================================================
+# LEGALI v2.0 — .gitignore
+# ============================================================
+
+# ── Backups de BD (NUNCA en el repo público — contienen datos) ─
+/backups/
+backups/
+*.dump
+
+# Excluir *.sql de backups SIN excluir las migraciones versionadas
+# (supabase/migrations/*.sql SÍ deben versionarse)
+# Patrón seguro: excluir .sql en la raíz y en /backups/
+/*.sql
+/backups/*.sql
+
+# ── Supabase local ────────────────────────────────────────────
+supabase/.branches/
+supabase/.temp/
+# Nota: supabase/.temp/linked-project.json y similares ya están
+# en .temp/ que se excluye arriba.
+
+# ── Node / npm ────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# ── Variables de entorno / Secrets ───────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ── Sistemas operativos ───────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Editores ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Temporales ───────────────────────────────────────────────
+tmp/
+temp/
+.cache/
+dist/
+build/

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEGALI — Términos y Condiciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1B4FD8; --primary-light: #3B82F6; --sidebar-bg: #0A1628;
+  --bg: #F0F4FC; --card: #FFFFFF; --text: #0F2545; --text-soft: #4A6080;
+  --text-muted: #8899AA; --border: #D4E0F0; --gold: #C8960A; --gold-light: #F5C842;
+  --green: #0D9E6C; --red: #DC2626; --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(27,79,216,0.10);
+  --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+}
+html, body { font-family: var(--font-body); background: var(--sidebar-bg); color: #fff; }
+
+.bg-pattern {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(27,79,216,0.22) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 80% 60%, rgba(200,150,10,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.nav {
+  position: relative; z-index: 10; display: flex; align-items: center;
+  justify-content: space-between; padding: 20px 40px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+.nav-brand-sub { font-size: 11px; color: #5A7AA8; }
+.nav-link { color: #8899AA; font-size: 14px; text-decoration: none; transition: color .2s; }
+.nav-link:hover { color: #fff; }
+
+.wrap {
+  position: relative; z-index: 1; max-width: 760px; margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+.doc-card {
+  background: var(--card); color: var(--text); border-radius: var(--radius);
+  padding: 40px; box-shadow: var(--shadow);
+}
+.doc-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.doc-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; }
+.doc-card h2 { font-family: var(--font-display); font-size: 18px; margin: 28px 0 10px; color: var(--primary); }
+.doc-card h2:first-of-type { margin-top: 0; }
+.doc-card p, .doc-card li { font-size: 14.5px; line-height: 1.7; color: var(--text-soft); margin-bottom: 10px; }
+.doc-card ul { padding-left: 22px; margin-bottom: 10px; }
+.doc-card strong { color: var(--text); }
+.back-link { display: inline-block; margin-top: 28px; color: var(--primary); font-size: 14px; text-decoration: none; font-weight: 600; }
+.warn-box {
+  margin: 20px 0; padding: 16px; border-radius: var(--radius-sm);
+  background: rgba(200,150,10,0.08); border: 1px solid rgba(200,150,10,0.3);
+  font-size: 13.5px; color: var(--text-soft);
+}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+
+<nav class="nav">
+  <a href="planes.html" class="nav-brand">
+    <span style="font-size:24px;">⚖️</span>
+    <div>
+      <div class="nav-brand-name">LEGALI</div>
+      <div class="nav-brand-sub">Asistente Jurídico · Colombia</div>
+    </div>
+  </a>
+  <a href="register.html" class="nav-link">← Volver al registro</a>
+</nav>
+
+<div class="wrap">
+  <div class="doc-card">
+    <div class="doc-title">Términos y Condiciones de Uso</div>
+    <div class="doc-meta">Versión 2026-06-v1 · Vigente desde el 12 de junio de 2026</div>
+
+    <h2>1. Aceptación de los términos</h2>
+    <p>Al crear una cuenta y/o utilizar LEGALI ("la Plataforma"), usted acepta estos Términos y Condiciones y la <a href="privacidad.html" style="color:var(--primary);">Política de Tratamiento de Datos Personales</a>. Si no está de acuerdo, no debe utilizar el servicio.</p>
+
+    <h2>2. Descripción del servicio</h2>
+    <p>LEGALI es una herramienta de orientación jurídica que utiliza modelos de inteligencia artificial para responder consultas relacionadas con el Derecho Procesal Colombiano (Código General del Proceso, CPACA, Código de Procedimiento Penal, Código Procesal del Trabajo, Constitución Política y jurisprudencia de las Altas Cortes).</p>
+
+    <div class="warn-box">
+      <strong>⚠️ Aviso legal importante:</strong> LEGALI es una herramienta de apoyo informativo y <strong>no constituye asesoría legal profesional</strong>, ni reemplaza la consulta con un abogado debidamente habilitado conforme a la Ley 1123 de 2007 (Código Disciplinario del Abogado). Las respuestas generadas por inteligencia artificial pueden contener errores o estar incompletas. El usuario es el único responsable de verificar la información antes de tomar decisiones legales.
+    </div>
+
+    <h2>3. Cuentas de usuario</h2>
+    <ul>
+      <li>Usted debe proporcionar información veraz al registrarse.</li>
+      <li>Es responsable de mantener la confidencialidad de su contraseña.</li>
+      <li>Cada cuenta es de uso personal/profesional individual, salvo planes corporativos expresamente contratados.</li>
+    </ul>
+
+    <h2>4. Planes, cuotas y pagos</h2>
+    <ul>
+      <li>LEGALI ofrece planes gratuitos y de pago con distintas cuotas mensuales de consultas.</li>
+      <li>Los pagos son procesados por pasarelas de terceros (Wompi / MercadoPago). LEGALI no almacena datos de tarjetas.</li>
+      <li>Las cuotas se reinician mensualmente según la fecha de activación del plan.</li>
+      <li>Los cambios de plan, cancelaciones y políticas de reembolso se rigen por las condiciones informadas al momento de la compra.</li>
+    </ul>
+
+    <h2>5. Uso aceptable</h2>
+    <p>Está prohibido:</p>
+    <ul>
+      <li>Utilizar la Plataforma para fines ilegales o fraudulentos.</li>
+      <li>Intentar vulnerar la seguridad de la Plataforma, realizar ingeniería inversa o eludir los límites de cuota.</li>
+      <li>Cargar contenido que infrinja derechos de terceros, incluyendo propiedad intelectual o datos personales de terceros sin autorización.</li>
+      <li>Utilizar el servicio para generar contenido difamatorio, discriminatorio o que incite a la violencia.</li>
+    </ul>
+
+    <h2>6. Propiedad intelectual</h2>
+    <p>El software, marca, diseño y contenidos originales de LEGALI son propiedad de sus desarrolladores. Los documentos que usted carga siguen siendo de su propiedad; LEGALI los procesa únicamente para prestarle el servicio (búsqueda y contexto en sus consultas).</p>
+
+    <h2>7. Limitación de responsabilidad</h2>
+    <p>LEGALI se presta "tal cual" (as is). No garantizamos disponibilidad ininterrumpida del servicio ni la exactitud absoluta de las respuestas generadas por los modelos de inteligencia artificial. En ningún caso LEGALI será responsable por decisiones legales, judiciales o administrativas tomadas con base en las respuestas del asistente.</p>
+
+    <h2>8. Suspensión y terminación</h2>
+    <p>Nos reservamos el derecho de suspender o cancelar cuentas que incumplan estos términos. Usted puede eliminar su cuenta y datos en cualquier momento desde la sección "Mi Perfil", conforme a la Ley 1581 de 2012.</p>
+
+    <h2>9. Modificaciones</h2>
+    <p>Podremos actualizar estos términos para reflejar cambios legales, técnicos o del servicio. El uso continuado de la Plataforma tras una actualización implica la aceptación de los nuevos términos.</p>
+
+    <h2>10. Ley aplicable</h2>
+    <p>Estos términos se rigen por las leyes de la República de Colombia.</p>
+
+    <a href="register.html" class="back-link">← Volver al registro</a>
+  </div>
+</div>
+
+</body>
+</html>

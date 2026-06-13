@@ -1,6 +1,7 @@
 // ============================================================
 // LEGALI v2.0 — supabase/functions/ai-proxy/index.ts
 // Edge Function: proxy seguro hacia Groq / OpenAI / Anthropic
+// ACTUALIZACIÓN: integra check_rate_limit (migración 003)
 // Deploy: supabase functions deploy ai-proxy
 // ============================================================
 
@@ -27,10 +28,20 @@ const ALLOWED_MODELS: Record<string, string[]> = {
     "gpt-3.5-turbo",
   ],
   anthropic: [
-    "claude-sonnet-4-20250514",
-    "claude-opus-4-6",
+    "claude-sonnet-4-6",
+    "claude-opus-4-8",
     "claude-haiku-4-5-20251001",
   ],
+};
+
+// ── Límites de rate por plan ──────────────────────────────────
+// Peticiones máximas por minuto según plan
+const RATE_LIMITS: Record<string, number> = {
+  gratis:       5,
+  consultorio: 15,
+  profesional: 30,
+  firma:       60,
+  admin:       60,
 };
 
 // ── API endpoints ─────────────────────────────────────────────
@@ -69,7 +80,7 @@ serve(async (req: Request) => {
     return _error(401, "auth_error", "Sesión inválida o expirada");
   }
 
-  // ── 2. Verificar cuota ──────────────────────────────────────
+  // ── 2. Verificar cuota (check_user_quota incluye estado activo) ─
   const { data: quotaResult, error: quotaErr } = await sbAdmin
     .rpc("check_user_quota", { p_user_id: user.id });
 
@@ -84,7 +95,33 @@ serve(async (req: Request) => {
     return _error(status, reason, "Acceso denegado");
   }
 
-  // ── 3. Parsear body ─────────────────────────────────────────
+  // ── 3. Rate limiting por usuario (migración 003) ─────────────
+  // Obtener el plan del usuario para aplicar el límite correcto
+  const { data: profile } = await sbAdmin
+    .from("legali_profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const userPlan   = profile?.plan || "gratis";
+  const rateLimit  = RATE_LIMITS[userPlan] || RATE_LIMITS.gratis;
+
+  const { data: rateResult, error: rateErr } = await sbAdmin
+    .rpc("check_rate_limit", {
+      p_user_id:        user.id,
+      p_max_per_minute: rateLimit,
+    });
+
+  if (rateErr) {
+    // Si la función no existe (ej. migración 003 no aplicada), log y seguir
+    console.warn("check_rate_limit no disponible:", rateErr.message);
+  } else if (rateResult && !rateResult.allowed) {
+    return _error(429, "rate_limited",
+      `Demasiadas peticiones. Límite: ${rateLimit} por minuto.`
+    );
+  }
+
+  // ── 4. Parsear body ─────────────────────────────────────────
   let body: {
     provider:      string;
     model:         string;
@@ -111,13 +148,13 @@ serve(async (req: Request) => {
     return _error(400, "invalid_messages", "messages requerido");
   }
 
-  // ── 4. Obtener API key del servidor ─────────────────────────
+  // ── 5. Obtener API key del servidor ─────────────────────────
   const apiKey = _getApiKey(provider);
   if (!apiKey) {
     return _error(500, "config_error", `API key no configurada para ${provider}`);
   }
 
-  // ── 5. Llamar proveedor de IA ────────────────────────────────
+  // ── 6. Llamar proveedor de IA ────────────────────────────────
   try {
     const aiResponse = await _callProvider({
       provider, model, apiKey, messages, system_prompt,
@@ -193,9 +230,9 @@ async function _callProvider({
     },
     body: JSON.stringify({
       model,
-      messages:   openaiMessages,
-      max_tokens: 2048,
-      stream:     true,
+      messages:    openaiMessages,
+      max_tokens:  2048,
+      stream:      true,
       temperature: 0.3,
     }),
   });
