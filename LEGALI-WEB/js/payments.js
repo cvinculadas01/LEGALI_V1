@@ -14,11 +14,11 @@ const PRICING = {
   firma:       { usd: 79, cop: 331800, annual_usd: 758, annual_cop: 3182400 },
 };
 
-// Wompi public key (sandbox).
-// Obtener en: https://comercios.wompi.co/ (cuenta sandbox gratuita)
-// Reemplazar por la llave de producción ("pub_prod_...") antes de
-// activar cuenta de comercio real (ver Punto 6 del plan).
-const WOMPI_PUBLIC_KEY = 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
+// Wompi public key — configurada en js/payment-keys.js (cargado antes
+// que este archivo). Para cambiar de sandbox a producción, editar
+// SOLO js/payment-keys.js (ver Punto 6.4 del plan).
+const WOMPI_PUBLIC_KEY = (window.LEGALI_PAYMENT_KEYS && window.LEGALI_PAYMENT_KEYS.WOMPI_PUBLIC_KEY)
+  || 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
 
 // ── Wompi Checkout ────────────────────────────────────────────
 async function initWompiCheckout(plan, period = 'monthly') {
