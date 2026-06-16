@@ -108,10 +108,12 @@ async function searchDocs(queryText, sessionId = null, maxResults = RAG_CONFIG.m
   if (!queryText || queryText.trim().length < 3) return [];
 
   try {
+    const user = window.LEGALI_USER;
     const { data, error } = await supabaseClient.rpc('search_legal_docs', {
       query_text:   queryText.trim(),
       p_session_id: sessionId,
       max_results:  maxResults,
+      p_user_id:    user?.id || null,
     });
 
     if (error) throw error;
@@ -174,11 +176,11 @@ async function listSessionDocuments(sessionId) {
   if (!user) return [];
 
   try {
+    // Listar por user_id para que persistan entre sesiones
     const { data, error } = await supabaseClient
       .from('session_documents')
       .select('id, filename, size_bytes, created_at')
       .eq('user_id', user.id)
-      .eq('session_id', sessionId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
