@@ -18,7 +18,7 @@
 -- 1. Reset mensual de cuotas vía pg_cron
 --    Día 1 de cada mes, 00:00 UTC
 -- ─────────────────────────────────────────────────────────────
-select cron.unschedule('legali_monthly_quota_reset');  -- evitar duplicados
+select cron.unschedule(jobid) from cron.job where jobname = 'legali_monthly_quota_reset';
 
 select cron.schedule(
   'legali_monthly_quota_reset',
@@ -36,7 +36,7 @@ select cron.schedule(
 -- 2. Limpieza automática de eventos de rate limit
 --    Cada hora, elimina eventos con más de 10 minutos de antigüedad
 -- ─────────────────────────────────────────────────────────────
-select cron.unschedule('legali_rate_events_cleanup');
+select cron.unschedule(jobid) from cron.job where jobname = 'legali_rate_events_cleanup';
 
 select cron.schedule(
   'legali_rate_events_cleanup',
@@ -51,7 +51,7 @@ select cron.schedule(
 -- 3. Limpieza de conversaciones antiguas (>120 días)
 --    Cada domingo a las 02:00 UTC
 -- ─────────────────────────────────────────────────────────────
-select cron.unschedule('legali_conversations_cleanup');
+select cron.unschedule(jobid) from cron.job where jobname = 'legali_conversations_cleanup';
 
 select cron.schedule(
   'legali_conversations_cleanup',
@@ -139,7 +139,7 @@ grant execute on function public.search_legal_docs(text, text, integer) to servi
 --    Cada día a las 01:00 UTC: planes con plan_expires_at vencido
 --    vuelven a 'gratis' automáticamente
 -- ─────────────────────────────────────────────────────────────
-select cron.unschedule('legali_plan_expiry_check');
+select cron.unschedule(jobid) from cron.job where jobname = 'legali_plan_expiry_check';
 
 select cron.schedule(
   'legali_plan_expiry_check',
