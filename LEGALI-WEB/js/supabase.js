@@ -50,6 +50,59 @@ async function loadConversation(sessionId, limit = 20) {
   }
 }
 
+// ── Listar todas las sesiones del usuario (historial) ────────
+async function listUserSessions() {
+  const user = window.LEGALI_USER;
+  if (!user) return [];
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('conversations')
+      .select('session_id, content, created_at, role')
+      .eq('user_id', user.id)
+      .eq('role', 'user')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Agrupar por session_id, tomar el primer mensaje y la fecha más reciente
+    const seen = new Map();
+    for (const row of (data || [])) {
+      if (!seen.has(row.session_id)) {
+        seen.set(row.session_id, {
+          session_id:  row.session_id,
+          preview:     row.content.slice(0, 80) + (row.content.length > 80 ? '…' : ''),
+          created_at:  row.created_at,
+        });
+      }
+    }
+    return Array.from(seen.values());
+  } catch (e) {
+    console.error('listUserSessions error:', e);
+    return [];
+  }
+}
+
+// ── Eliminar una sesión completa del usuario ─────────────────
+async function deleteSession(sessionId) {
+  const user = window.LEGALI_USER;
+  if (!user) return false;
+
+  try {
+    const { error } = await supabaseClient
+      .from('conversations')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('session_id', sessionId);
+
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error('deleteSession error:', e);
+    return false;
+  }
+}
+
 // ── Buscar documentos RAG ────────────────────────────────────
 async function searchDocs(queryText, sessionId = null, maxResults = RAG_CONFIG.maxResults) {
   if (!queryText || queryText.trim().length < 3) return [];
