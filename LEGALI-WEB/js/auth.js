@@ -13,21 +13,19 @@
     return;
   }
 
-  const _sbAuth = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  _sbAuth.auth.getSession().then(({ data: { session } }) => {
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
     if (!session) {
       window.location.href = 'login.html';
       return;
     }
 
-    _sbAuth.from('legali_profiles')
+    supabaseClient.from('legali_profiles')
       .select('plan, active')
       .eq('id', session.user.id)
       .maybeSingle()
       .then(({ data: profile }) => {
         if (!profile || !profile.active) {
-          _sbAuth.auth.signOut().then(() => {
+          supabaseClient.auth.signOut().then(() => {
             window.location.href = 'login.html';
           });
           return;
@@ -47,8 +45,7 @@
 // ── Función global de logout (usada en todos los HTMLs) ───────
 async function legaliLogout() {
   try {
-    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    await _sb.auth.signOut();
+    await supabaseClient.auth.signOut();
   } catch (e) {
     console.warn('Logout error:', e);
   } finally {
@@ -58,8 +55,7 @@ async function legaliLogout() {
 
 // ── Obtener sesión activa ─────────────────────────────────────
 async function getActiveSession() {
-  const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data: { session }, error } = await _sb.auth.getSession();
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
   if (error || !session) return null;
   return session;
 }

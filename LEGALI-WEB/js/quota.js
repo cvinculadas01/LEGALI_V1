@@ -5,8 +5,6 @@
 
 'use strict';
 
-const _sbQuota = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 // ── Verificar si el usuario puede hacer una consulta ─────────
 async function checkQuota() {
   const user = window.LEGALI_USER;
@@ -22,7 +20,7 @@ async function checkQuota() {
 
   // Verificación remota para evitar manipulación
   try {
-    const { data, error } = await _sbQuota.rpc('check_user_quota', {
+    const { data, error } = await supabaseClient.rpc('check_user_quota', {
       p_user_id: user.id,
     });
     if (error) throw error;
@@ -43,7 +41,7 @@ async function incrementQuota() {
   if (user.quota_total === 9999) return; // ilimitado, no incrementar
 
   try {
-    const { error } = await _sbQuota.rpc('increment_quota_used', {
+    const { error } = await supabaseClient.rpc('increment_quota_used', {
       p_user_id: user.id,
     });
     if (error) throw error;

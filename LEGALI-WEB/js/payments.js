@@ -5,8 +5,6 @@
 
 'use strict';
 
-const _sbPay = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 // ── Configuración de precios ──────────────────────────────────
 const PRICING = {
   consultorio: { usd: 9,  cop: 37800,  annual_usd: 86,  annual_cop: 362880 },
@@ -28,11 +26,11 @@ async function initWompiCheckout(plan, period = 'monthly') {
   const pricing = PRICING[plan];
   if (!pricing) { console.error('Plan inválido:', plan); return; }
 
-  const amountCop  = period === 'annual' ? pricing.annual_cop : pricing.cop;
+  const amountCop   = period === 'annual' ? pricing.annual_cop : pricing.cop;
   const amountCents = amountCop * 100; // Wompi usa centavos
 
   // Registrar intención de pago
-  const { data: payment, error } = await _sbPay
+  const { data: payment, error } = await supabaseClient
     .from('legali_payments')
     .insert({
       user_id:    user.id,
@@ -73,7 +71,7 @@ async function initMercadoPagoCheckout(plan, period = 'monthly') {
   const amountUsd = period === 'annual' ? pricing.annual_usd : pricing.usd;
 
   // Registrar intención de pago
-  const { data: payment, error } = await _sbPay
+  const { data: payment, error } = await supabaseClient
     .from('legali_payments')
     .insert({
       user_id:    user.id,
@@ -122,21 +120,17 @@ async function activatePlan(plan) {
   if (!user) return;
 
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-
-    // El webhook de Wompi/MP activa el plan en BD vía Edge Function.
-    // Esta función actualiza el estado local si el usuario ya fue activado.
-    const { data: profile } = await _sbPay
+    const { data: profile } = await supabaseClient
       .from('legali_profiles')
       .select('plan, quota_used, quota_total, provider_assigned')
       .eq('id', user.id)
       .maybeSingle();
 
     if (profile) {
-      window.LEGALI_USER.plan          = profile.plan;
-      window.LEGALI_USER.quota_used    = profile.quota_used;
-      window.LEGALI_USER.quota_total   = profile.quota_total;
-      window.LEGALI_USER.provider      = profile.provider_assigned;
+      window.LEGALI_USER.plan        = profile.plan;
+      window.LEGALI_USER.quota_used  = profile.quota_used;
+      window.LEGALI_USER.quota_total = profile.quota_total;
+      window.LEGALI_USER.provider    = profile.provider_assigned;
     }
   } catch (e) {
     console.error('activatePlan error:', e);
@@ -157,12 +151,11 @@ async function checkPaymentReturn() {
   window.history.replaceState({}, document.title, cleanUrl);
 
   if (provider === 'wompi') {
-    // Wompi redirección directa — consultar estado
     await _pollPaymentStatus(pid, provider);
   } else if (provider === 'mercadopago') {
     const status = params.get('collection_status') || params.get('status');
     if (status === 'approved') {
-      await activatePlan(null); // Refrescar perfil desde BD
+      await activatePlan(null);
       _showPaymentToast('✅ ¡Pago aprobado! Tu plan ya está activo.');
     } else {
       _showPaymentToast('⚠️ El pago no fue completado. Intenta de nuevo.', 'warn');
@@ -176,7 +169,7 @@ async function _pollPaymentStatus(paymentId, provider, maxAttempts = 8) {
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise(r => setTimeout(r, 2000));
 
-    const { data } = await _sbPay
+    const { data } = await supabaseClient
       .from('legali_payments')
       .select('status, plan')
       .eq('id', paymentId)
