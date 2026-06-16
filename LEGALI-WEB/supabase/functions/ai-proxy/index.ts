@@ -1,16 +1,27 @@
 // ============================================================
 // LEGALI v2.0 — supabase/functions/ai-proxy/index.ts
 // Edge Function: proxy seguro hacia Groq / OpenAI / Anthropic
-// ACTUALIZACIÓN: integra check_rate_limit (migración 003)
+// ACTUALIZACIÓN v2.1:
+//   - Registro de audit_logs desde el servidor (provider/model/tokens)
+//   - CORS restringido (cambia ALLOWED_ORIGINS al migrar a producción)
+//   - Manejo de error 429 con header Retry-After
+//   - rate_limited devuelve tiempo de espera
 // Deploy: supabase functions deploy ai-proxy
 // ============================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ── CORS headers ──────────────────────────────────────────────
+// ── CORS ───────────────────────────────────────────────────────
+// PRODUCCIÓN: reemplazar '*' por el dominio real, por ejemplo:
+//   "https://tudominio.com"
+// y actualizar el secret:
+//   supabase secrets set LEGALI_SITE_URL=https://tudominio.com
+// ──────────────────────────────────────────────────────────────
+const SITE_URL = Deno.env.get("LEGALI_SITE_URL") || "*";
+
 const CORS = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin":  SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -35,7 +46,6 @@ const ALLOWED_MODELS: Record<string, string[]> = {
 };
 
 // ── Límites de rate por plan ──────────────────────────────────
-// Peticiones máximas por minuto según plan
 const RATE_LIMITS: Record<string, number> = {
   gratis:       5,
   consultorio: 15,
@@ -80,7 +90,7 @@ serve(async (req: Request) => {
     return _error(401, "auth_error", "Sesión inválida o expirada");
   }
 
-  // ── 2. Verificar cuota (check_user_quota incluye estado activo) ─
+  // ── 2. Verificar cuota (check_user_quota) ──────────────────
   const { data: quotaResult, error: quotaErr } = await sbAdmin
     .rpc("check_user_quota", { p_user_id: user.id });
 
@@ -96,15 +106,14 @@ serve(async (req: Request) => {
   }
 
   // ── 3. Rate limiting por usuario (migración 003) ─────────────
-  // Obtener el plan del usuario para aplicar el límite correcto
   const { data: profile } = await sbAdmin
     .from("legali_profiles")
     .select("plan")
     .eq("id", user.id)
     .maybeSingle();
 
-  const userPlan   = profile?.plan || "gratis";
-  const rateLimit  = RATE_LIMITS[userPlan] || RATE_LIMITS.gratis;
+  const userPlan  = profile?.plan || "gratis";
+  const rateLimit = RATE_LIMITS[userPlan] || RATE_LIMITS.gratis;
 
   const { data: rateResult, error: rateErr } = await sbAdmin
     .rpc("check_rate_limit", {
@@ -113,19 +122,29 @@ serve(async (req: Request) => {
     });
 
   if (rateErr) {
-    // Si la función no existe (ej. migración 003 no aplicada), log y seguir
     console.warn("check_rate_limit no disponible:", rateErr.message);
   } else if (rateResult && !rateResult.allowed) {
-    return _error(429, "rate_limited",
-      `Demasiadas peticiones. Límite: ${rateLimit} por minuto.`
+    return new Response(
+      JSON.stringify({ error: true, reason: "rate_limited", message: `Demasiadas peticiones. Límite: ${rateLimit} por minuto.` }),
+      {
+        status: 429,
+        headers: {
+          ...CORS,
+          "Content-Type":  "application/json",
+          "Retry-After":   "60",
+          "X-RateLimit-Limit":     String(rateLimit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset":     String(Math.floor(Date.now() / 1000) + 60),
+        },
+      }
     );
   }
 
   // ── 4. Parsear body ─────────────────────────────────────────
   let body: {
-    provider:      string;
-    model:         string;
-    messages:      { role: string; content: string }[];
+    provider:       string;
+    model:          string;
+    messages:       { role: string; content: string }[];
     system_prompt?: string;
   };
 
@@ -137,7 +156,6 @@ serve(async (req: Request) => {
 
   const { provider, model, messages, system_prompt } = body;
 
-  // Validar proveedor y modelo
   if (!ALLOWED_MODELS[provider]) {
     return _error(400, "invalid_provider", `Proveedor no permitido: ${provider}`);
   }
@@ -155,6 +173,8 @@ serve(async (req: Request) => {
   }
 
   // ── 6. Llamar proveedor de IA ────────────────────────────────
+  const startedAt = Date.now();
+
   try {
     const aiResponse = await _callProvider({
       provider, model, apiKey, messages, system_prompt,
@@ -163,10 +183,39 @@ serve(async (req: Request) => {
     if (!aiResponse.ok) {
       const errBody = await aiResponse.text();
       console.error(`${provider} error ${aiResponse.status}:`, errBody);
+
+      // Registrar error en audit_logs
+      await _logAudit(sbAdmin, {
+        user_id:    user.id,
+        action:     "query_error",
+        provider,
+        model,
+        meta:       { status: aiResponse.status, error: errBody.slice(0, 200) },
+      });
+
       return _error(502, "provider_error", `Error del proveedor IA: ${aiResponse.status}`);
     }
 
-    // Pasar el stream SSE directamente al cliente
+    // ── 7. Registrar uso en audit_logs (servidor) ───────────────
+    // Estimación de tokens: ~4 chars por token (aprox.)
+    const inputChars = messages.reduce((acc, m) => acc + m.content.length, 0);
+    const tokensInEst = Math.ceil(inputChars / 4);
+
+    // Registrar de forma no-bloqueante (fire and forget)
+    _logAudit(sbAdmin, {
+      user_id:    user.id,
+      action:     "query",
+      provider,
+      model,
+      tokens_in:  tokensInEst,
+      meta:       {
+        plan:             userPlan,
+        latency_ms:       Date.now() - startedAt,
+        rate_limit_used:  rateResult?.count,
+      },
+    }).catch(e => console.warn("logAudit error:", e));
+
+    // Pasar stream SSE directamente al cliente
     return new Response(aiResponse.body, {
       status: 200,
       headers: {
@@ -176,6 +225,7 @@ serve(async (req: Request) => {
         "Connection":    "keep-alive",
         "X-Provider":    provider,
         "X-Model":       model,
+        "X-Plan":        userPlan,
       },
     });
 
@@ -189,13 +239,13 @@ serve(async (req: Request) => {
 async function _callProvider({
   provider, model, apiKey, messages, system_prompt,
 }: {
-  provider:      string;
-  model:         string;
-  apiKey:        string;
-  messages:      { role: string; content: string }[];
+  provider:       string;
+  model:          string;
+  apiKey:         string;
+  messages:       { role: string; content: string }[];
   system_prompt?: string;
 }): Promise<Response> {
-  const endpoint = ENDPOINTS[provider];
+  const endpoint  = ENDPOINTS[provider];
   const sysPrompt = system_prompt || _defaultSystemPrompt();
 
   if (provider === "anthropic") {
@@ -217,11 +267,6 @@ async function _callProvider({
   }
 
   // OpenAI / Groq (formato compatible)
-  const openaiMessages = [
-    { role: "system", content: sysPrompt },
-    ...messages.filter(m => m.role !== "system"),
-  ];
-
   return await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -230,12 +275,46 @@ async function _callProvider({
     },
     body: JSON.stringify({
       model,
-      messages:    openaiMessages,
+      messages: [
+        { role: "system", content: sysPrompt },
+        ...messages.filter(m => m.role !== "system"),
+      ],
       max_tokens:  2048,
       stream:      true,
       temperature: 0.3,
     }),
   });
+}
+
+// ── Registrar en audit_logs ───────────────────────────────────
+async function _logAudit(
+  sbAdmin: ReturnType<typeof createClient>,
+  data: {
+    user_id:    string;
+    action:     string;
+    provider:   string;
+    model:      string;
+    tokens_in?: number;
+    tokens_out?: number;
+    session_id?: string;
+    meta?:      Record<string, unknown>;
+  }
+): Promise<void> {
+  try {
+    const { error } = await sbAdmin.from("audit_logs").insert({
+      user_id:    data.user_id,
+      action:     data.action,
+      provider:   data.provider,
+      model:      data.model,
+      tokens_in:  data.tokens_in  || 0,
+      tokens_out: data.tokens_out || 0,
+      session_id: data.session_id || null,
+      meta:       data.meta       || null,
+    });
+    if (error) console.warn("audit_logs insert error:", error.message);
+  } catch (e) {
+    console.warn("_logAudit exception:", e);
+  }
 }
 
 // ── Obtener key de entorno ────────────────────────────────────

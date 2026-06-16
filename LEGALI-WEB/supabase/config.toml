@@ -1,0 +1,90 @@
+# ============================================================
+# LEGALI v2.0 — supabase/config.toml
+# Configuración de Supabase CLI para desarrollo local y deploy.
+#
+# Documentación: https://supabase.com/docs/guides/cli/config
+# ============================================================
+
+project_id = "gunfflxviwauixdymsfk"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# Tiempo de vida del JWT: 3600 = 1 hora. Ajustar según necesidad.
+jwt_expiry = 3600
+# Deshabilitar email de confirmación en desarrollo (habilitar en producción)
+enable_signup = true
+# Redirect URL para recuperación de contraseña
+site_url = "https://cvinculadas01.github.io/LEGALI_V1/LEGALI-WEB"
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false   # Cambiar a true en producción
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+# ── Edge Functions ────────────────────────────────────────────
+[functions.ai-proxy]
+verify_jwt = true
+
+[functions.create-mp-preference]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+# webhook-wompi y webhook-mercadopago no verifican JWT (son llamados por las pasarelas)
+[functions.webhook-wompi]
+verify_jwt = false
+
+[functions.webhook-mercadopago]
+verify_jwt = false
+
+# ── Analytics (deshabilitado) ─────────────────────────────────
+[analytics]
+enabled = false
+port = 54327
+backend = "postgres"

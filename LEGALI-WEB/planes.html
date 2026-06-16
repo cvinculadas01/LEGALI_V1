@@ -38,12 +38,9 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-brand-name {
-  font-family: var(--font-display); font-size: 20px; font-weight: 700;
-  color: #fff; letter-spacing: 2px;
-}
+.nav-brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 2px; }
 .nav-brand-sub { font-size: 11px; color: #5A7AA8; }
-.nav-actions { display: flex; gap: 12px; }
+.nav-actions { display: flex; gap: 12px; align-items: center; }
 .nav-link { color: #8899AA; font-size: 14px; text-decoration: none; transition: color .2s; }
 .nav-link:hover { color: #fff; }
 .nav-btn {
@@ -52,60 +49,50 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
   border: none; cursor: pointer; text-decoration: none; transition: background .2s;
 }
 .nav-btn:hover { background: #1540B0; }
+/* Usuario logueado en nav */
+.nav-user { display:none; align-items:center; gap:8px; color: #8899AA; font-size:13px; }
+.nav-user .nav-user-plan { color: var(--gold-light); font-weight:600; }
+.nav-user .btn-dash { padding:6px 14px; border-radius:var(--radius-sm); background:rgba(27,79,216,0.25); border:1px solid rgba(27,79,216,0.5); color:#fff; font-size:13px; font-weight:600; text-decoration:none; }
 
 /* ── Hero ── */
-.hero {
-  position: relative; z-index: 1; text-align: center;
-  padding: 80px 20px 60px;
-}
+.hero { position: relative; z-index: 1; text-align: center; padding: 80px 20px 60px; }
 .hero-badge {
   display: inline-block; font-size: 12px; font-weight: 600;
   color: var(--gold-light); background: rgba(200,150,10,0.12);
   border: 1px solid rgba(200,150,10,0.25); border-radius: 20px;
   padding: 4px 16px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px;
 }
-.hero h1 {
-  font-family: var(--font-display); font-size: clamp(32px, 5vw, 52px); font-weight: 800;
-  color: #fff; line-height: 1.1; margin-bottom: 16px;
-}
+.hero h1 { font-family: var(--font-display); font-size: clamp(32px, 5vw, 52px); font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 16px; }
 .hero h1 span { color: var(--gold-light); }
 .hero p { font-size: 18px; color: #8899AA; max-width: 560px; margin: 0 auto 32px; }
 
-.billing-toggle {
-  display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 30px;
-  padding: 4px; gap: 0; margin-bottom: 50px;
-}
-.billing-btn {
-  padding: 8px 24px; border-radius: 26px; font-size: 14px; font-weight: 500;
-  color: #8899AA; background: none; border: none; cursor: pointer; transition: all .2s;
-}
+.billing-toggle { display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 30px; padding: 4px; margin-bottom: 50px; }
+.billing-btn { padding: 8px 24px; border-radius: 26px; font-size: 14px; font-weight: 500; color: #8899AA; background: none; border: none; cursor: pointer; transition: all .2s; }
 .billing-btn.active { background: var(--primary); color: #fff; }
 
 /* ── Plans grid ── */
 .plans-section { position: relative; z-index: 1; padding: 0 20px 80px; }
 .plans-wrap { max-width: 1100px; margin: 0 auto; }
-.plans-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 20px; align-items: start;
-}
+.plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; align-items: start; }
 
 .plan-card {
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius); padding: 28px 24px;
-  transition: all .3s; position: relative;
+  border-radius: var(--radius); padding: 28px 24px; transition: all .3s; position: relative;
 }
 .plan-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
-.plan-card.featured {
-  background: rgba(27,79,216,0.18); border: 2px solid var(--primary);
-  transform: scale(1.02);
-}
+.plan-card.featured { background: rgba(27,79,216,0.18); border: 2px solid var(--primary); transform: scale(1.02); }
 .plan-card.featured:hover { transform: scale(1.02) translateY(-3px); }
+.plan-card.current-plan { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
 
 .featured-badge {
   position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
   background: var(--gold); color: #fff; font-size: 11px; font-weight: 700;
-  padding: 3px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px;
-  white-space: nowrap;
+  padding: 3px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+}
+.current-badge {
+  position: absolute; top: -12px; right: 16px;
+  background: var(--green); color: #fff; font-size: 11px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px; white-space: nowrap;
 }
 
 .plan-icon { font-size: 28px; margin-bottom: 12px; }
@@ -121,43 +108,71 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
   width: 100%; padding: 12px; border-radius: var(--radius-sm);
   font-family: var(--font-body); font-size: 14px; font-weight: 600;
   cursor: pointer; transition: all .2s; text-decoration: none;
-  display: block; text-align: center;
+  display: block; text-align: center; border: none;
 }
+a.plan-cta { display: block; }
+button.plan-cta { cursor: pointer; }
 .plan-cta.outline { background: none; border: 1.5px solid rgba(255,255,255,0.2); color: #fff; }
 .plan-cta.outline:hover { border-color: var(--primary-light); background: rgba(27,79,216,0.15); }
 .plan-cta.filled { background: var(--primary); border: none; color: #fff; }
 .plan-cta.filled:hover { background: #1540B0; }
 .plan-cta.gold { background: var(--gold); border: none; color: #fff; }
 .plan-cta.gold:hover { background: #B07E00; }
+.plan-cta.disabled { opacity: .45; pointer-events: none; cursor: default; }
+.plan-cta.current { background: rgba(13,158,108,0.18); border: 1.5px solid var(--green); color: var(--green); pointer-events: none; }
+
+/* Modal de pago */
+.payment-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+.payment-modal-overlay.open { display: flex; }
+.payment-modal {
+  background: #0F1E35; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius); padding: 36px; max-width: 440px; width: 95%;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.modal-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.modal-plan-info { font-size: 14px; color: #8899AA; margin-bottom: 28px; }
+.modal-plan-info strong { color: var(--gold-light); }
+.modal-label { font-size: 12px; font-weight: 600; color: #8899AA; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+.payment-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.payment-btn {
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  border-radius: var(--radius-sm); border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); cursor: pointer; transition: all .2s;
+  font-family: var(--font-body); text-align: left; color: #fff; width: 100%;
+}
+.payment-btn:hover { background: rgba(27,79,216,0.2); border-color: var(--primary-light); }
+.payment-btn-icon { font-size: 24px; flex-shrink: 0; }
+.payment-btn-name { font-size: 14px; font-weight: 600; color: #fff; }
+.payment-btn-desc { font-size: 12px; color: #8899AA; margin-top: 1px; }
+.modal-close { width: 100%; padding: 10px; border-radius: var(--radius-sm); background: none; border: 1px solid rgba(255,255,255,0.1); color: #8899AA; font-size: 14px; cursor: pointer; transition: all .2s; margin-top: 4px; }
+.modal-close:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.modal-spinner { display: none; text-align: center; padding: 24px 0; }
+.modal-spinner::after { content: ''; display: inline-block; width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--primary-light); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.modal-msg { font-size: 13px; color: #8899AA; text-align: center; margin-top: 8px; }
+.modal-error { color: #FCA5A5; text-align: center; font-size: 13px; margin-top: 10px; display: none; }
+
+/* Toasts */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
 
 .plan-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 20px 0; }
 .features-title { font-size: 12px; font-weight: 600; color: #8899AA; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
-.feature-item {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: 13px; color: #C4D0E4; padding: 4px 0;
-}
+.feature-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #C4D0E4; padding: 4px 0; }
 .feature-icon { flex-shrink: 0; margin-top: 1px; }
 .feature-icon.check { color: var(--green); }
 .feature-icon.cross { color: #4A5568; }
-.feature-detail { font-size: 11px; color: #8899AA; }
 
-/* ── Feature comparison table ── */
+/* ── Comparison ── */
 .comparison { max-width: 900px; margin: 0 auto 80px; position: relative; z-index: 1; padding: 0 20px; }
-.comparison h2 {
-  font-family: var(--font-display); font-size: 28px; font-weight: 700;
-  color: #fff; text-align: center; margin-bottom: 32px;
-}
+.comparison h2 { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: #fff; text-align: center; margin-bottom: 32px; }
 .comp-table { width: 100%; border-collapse: collapse; }
-.comp-table th {
-  font-family: var(--font-display); font-size: 14px; font-weight: 700;
-  color: #fff; padding: 12px 16px; text-align: center;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
+.comp-table th { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #fff; padding: 12px 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .comp-table th:first-child { text-align: left; }
-.comp-table td {
-  padding: 12px 16px; font-size: 13px; color: #C4D0E4;
-  border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;
-}
+.comp-table td { padding: 12px 16px; font-size: 13px; color: #C4D0E4; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
 .comp-table td:first-child { text-align: left; color: #8899AA; }
 .comp-table tr:hover td { background: rgba(255,255,255,0.03); }
 .comp-check { color: var(--green); font-size: 16px; }
@@ -177,11 +192,7 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
 .faq-item.open .faq-a { display: block; }
 
 /* ── Footer ── */
-.footer {
-  position: relative; z-index: 1; text-align: center;
-  padding: 30px 20px; border-top: 1px solid rgba(255,255,255,0.06);
-  color: #5A7AA8; font-size: 13px;
-}
+.footer { position: relative; z-index: 1; text-align: center; padding: 30px 20px; border-top: 1px solid rgba(255,255,255,0.06); color: #5A7AA8; font-size: 13px; }
 .footer a { color: var(--primary-light); text-decoration: none; }
 .footer .disclaimer { font-size: 11px; color: #3A4A5A; margin-top: 8px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
@@ -198,6 +209,9 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
 <div class="bg-pattern"></div>
 <div class="bg-grid"></div>
 
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
 <!-- Nav -->
 <nav class="nav">
   <a class="nav-brand" href="login.html">
@@ -208,8 +222,16 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
     </div>
   </a>
   <div class="nav-actions">
-    <a class="nav-link" href="login.html">Iniciar sesión</a>
-    <a class="nav-btn" href="register.html">Crear cuenta gratis</a>
+    <!-- Visitante no autenticado -->
+    <a class="nav-link" href="login.html" id="navLogin">Iniciar sesión</a>
+    <a class="nav-btn" href="register.html" id="navRegister">Crear cuenta gratis</a>
+    <!-- Usuario autenticado (se muestra via JS) -->
+    <div class="nav-user" id="navUser">
+      <span>Hola, <span id="navUserName">—</span></span>
+      <span>·</span>
+      <span>Plan <span class="nav-user-plan" id="navUserPlan">—</span></span>
+      <a href="usuario.html" class="btn-dash">Ir al chat →</a>
+    </div>
   </div>
 </nav>
 
@@ -229,19 +251,20 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
 <section class="plans-section">
   <div class="plans-wrap">
     <div class="plans-grid">
+
       <!-- Gratis -->
-      <div class="plan-card">
+      <div class="plan-card" id="card-gratis">
         <div class="plan-icon">🆓</div>
         <div class="plan-name">Gratis</div>
         <div class="plan-desc">Para explorar y conocer el asistente</div>
         <div class="plan-price">
           <div><span class="amount free">$0</span> <span class="period">/ mes</span></div>
         </div>
-        <a href="register.html" class="plan-cta outline">Empezar gratis</a>
+        <a href="register.html" class="plan-cta outline" id="cta-gratis">Empezar gratis</a>
         <div class="plan-divider"></div>
         <div class="features-title">Incluye</div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>5 consultas / mes</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>IA Groq (ultra rápido)</span></div>
+        <div class="feature-item"><span class="feature-icon check">✓</span><span>IA Groq Llama 3 (ultra rápido)</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Acceso a biblioteca jurídica</span></div>
         <div class="feature-item"><span class="feature-icon cross">✗</span><span style="color:#4A5568">Exportar PDF / Word</span></div>
         <div class="feature-item"><span class="feature-icon cross">✗</span><span style="color:#4A5568">Subir documentos</span></div>
@@ -249,15 +272,15 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
       </div>
 
       <!-- Consultorio -->
-      <div class="plan-card">
+      <div class="plan-card" id="card-consultorio">
         <div class="plan-icon">🏢</div>
         <div class="plan-name">Consultorio</div>
         <div class="plan-desc">Para abogados y consultores independientes</div>
         <div class="plan-price">
           <div><span class="amount" id="p-cons">$9</span> <span class="period" id="pp-cons">USD / mes</span></div>
-          <div class="annual-note" id="pa-cons" style="display:none">Equivale a $7.2/mes facturado anualmente</div>
+          <div class="annual-note" id="pa-cons" style="display:none">Equivale a $7.2/mes · facturado anualmente</div>
         </div>
-        <a href="register.html?plan=consultorio" class="plan-cta outline">Elegir plan</a>
+        <button class="plan-cta outline" id="cta-consultorio" onclick="openPaymentModal('consultorio')">Contratar plan</button>
         <div class="plan-divider"></div>
         <div class="features-title">Todo lo anterior más</div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>50 consultas / mes</span></div>
@@ -268,16 +291,16 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
       </div>
 
       <!-- Profesional — FEATURED -->
-      <div class="plan-card featured">
+      <div class="plan-card featured" id="card-profesional">
         <div class="featured-badge">⭐ Más popular</div>
         <div class="plan-icon">⚖️</div>
         <div class="plan-name">Profesional</div>
         <div class="plan-desc">Para litigantes y firmas pequeñas activas</div>
         <div class="plan-price">
           <div><span class="amount" id="p-pro">$25</span> <span class="period" id="pp-pro">USD / mes</span></div>
-          <div class="annual-note" id="pa-pro" style="display:none">Equivale a $20/mes facturado anualmente</div>
+          <div class="annual-note" id="pa-pro" style="display:none">Equivale a $20/mes · facturado anualmente</div>
         </div>
-        <a href="register.html?plan=profesional" class="plan-cta filled">Elegir plan</a>
+        <button class="plan-cta filled" id="cta-profesional" onclick="openPaymentModal('profesional')">Contratar plan</button>
         <div class="plan-divider"></div>
         <div class="features-title">Todo lo anterior más</div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>200 consultas / mes</span></div>
@@ -288,15 +311,15 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
       </div>
 
       <!-- Firma -->
-      <div class="plan-card">
+      <div class="plan-card" id="card-firma">
         <div class="plan-icon">🏛️</div>
         <div class="plan-name">Firma / Juzgado</div>
         <div class="plan-desc">Para firmas y entidades con alto volumen</div>
         <div class="plan-price">
           <div><span class="amount" id="p-firma">$79</span> <span class="period" id="pp-firma">USD / mes</span></div>
-          <div class="annual-note" id="pa-firma" style="display:none">Equivale a $63/mes facturado anualmente</div>
+          <div class="annual-note" id="pa-firma" style="display:none">Equivale a $63/mes · facturado anualmente</div>
         </div>
-        <a href="register.html?plan=firma" class="plan-cta gold">Elegir plan</a>
+        <button class="plan-cta gold" id="cta-firma" onclick="openPaymentModal('firma')">Contratar plan</button>
         <div class="plan-divider"></div>
         <div class="features-title">Todo lo anterior más</div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Consultas ilimitadas</span></div>
@@ -306,6 +329,7 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Soporte prioritario</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>API de acceso (próximamente)</span></div>
       </div>
+
     </div>
   </div>
 </section>
@@ -326,7 +350,7 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
     <tbody>
       <tr class="comp-cat"><td colspan="5">Uso mensual</td></tr>
       <tr><td>Consultas / mes</td><td class="comp-val">5</td><td class="comp-val">50</td><td class="comp-val">200</td><td class="comp-val">Ilimitadas</td></tr>
-      <tr><td>Modelo de IA</td><td>Groq Llama3</td><td>GPT-4o mini</td><td class="comp-val">Claude Sonnet</td><td class="comp-val">Claude Opus</td></tr>
+      <tr><td>Modelo de IA</td><td>Groq Llama 3</td><td>GPT-4o mini</td><td class="comp-val">Claude Sonnet</td><td class="comp-val">Claude Opus</td></tr>
       <tr class="comp-cat"><td colspan="5">Funcionalidades</td></tr>
       <tr><td>Exportar PDF</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
       <tr><td>Exportar Word</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
@@ -376,8 +400,8 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
   <div style="margin-top:10px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
     <a href="login.html">Iniciar sesión</a>
     <a href="register.html">Crear cuenta</a>
-    <a href="#">Términos de uso</a>
-    <a href="#">Política de privacidad</a>
+    <a href="terminos.html">Términos de uso</a>
+    <a href="privacidad.html">Política de privacidad</a>
     <a href="mailto:soporte@legali.co">Contacto</a>
   </div>
   <div class="disclaimer">
@@ -385,38 +409,355 @@ html, body { font-family: var(--font-body); background: var(--sidebar-bg); color
   </div>
 </footer>
 
-<script>
-let billing = 'monthly';
+<!-- ── Modal de pago ─────────────────────────────────────────── -->
+<div class="payment-modal-overlay" id="paymentModalOverlay" onclick="closePaymentModal(event)">
+  <div class="payment-modal">
+    <div class="modal-title">💳 Contratar plan</div>
+    <div class="modal-plan-info" id="modalPlanInfo">Selecciona tu método de pago</div>
 
+    <div id="modalContent">
+      <div class="modal-label">Elige tu pasarela de pago</div>
+      <div class="payment-options">
+        <button class="payment-btn" id="btnPayWompi" onclick="handleWompiPay()">
+          <span class="payment-btn-icon">🏦</span>
+          <div>
+            <div class="payment-btn-name">Wompi</div>
+            <div class="payment-btn-desc">Tarjeta, PSE, Efecty, Baloto · Colombia (COP)</div>
+          </div>
+        </button>
+        <button class="payment-btn" id="btnPayMP" onclick="handleMercadoPagoPay()">
+          <span class="payment-btn-icon">💙</span>
+          <div>
+            <div class="payment-btn-name">MercadoPago</div>
+            <div class="payment-btn-desc">Tarjeta, PSE, efectivo · Latinoamérica (USD)</div>
+          </div>
+        </button>
+      </div>
+      <div class="modal-error" id="modalError"></div>
+      <button class="modal-close" onclick="closePaymentModal()">Cancelar</button>
+    </div>
+
+    <div class="modal-spinner" id="modalSpinner"></div>
+    <div class="modal-msg" id="modalMsg"></div>
+  </div>
+</div>
+
+<!-- ── Scripts ──────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/constants.js"></script>
+<script src="js/payment-keys.js"></script>
+
+<script>
+'use strict';
+
+// ── Supabase client ───────────────────────────────────────────
+const sbPlanes = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Estado de sesión y modal ──────────────────────────────────
+let PLANES_SESSION = null;
+let PLANES_PROFILE = null;
+let modalPlan      = null;
+let billing        = 'monthly';
+
+const PRICING = {
+  consultorio: { usd: 9,  cop: 37800,  annual_usd: 86,  annual_cop: 362880 },
+  profesional: { usd: 25, cop: 105000, annual_usd: 240, annual_cop: 1008000 },
+  firma:       { usd: 79, cop: 331800, annual_usd: 758, annual_cop: 3182400 },
+};
+
+const PLAN_LABELS = {
+  gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado'
+};
+
+// ── Init: verificar sesión ────────────────────────────────────
+(async function init() {
+  try {
+    const { data: { session } } = await sbPlanes.auth.getSession();
+    if (!session) return; // visitante: mostrar CTAs de registro
+
+    PLANES_SESSION = session;
+    const { data: profile } = await sbPlanes
+      .from('legali_profiles')
+      .select('nombre, plan, active')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (!profile || !profile.active) return;
+    PLANES_PROFILE = profile;
+
+    // Mostrar barra de usuario en nav
+    document.getElementById('navLogin').style.display = 'none';
+    document.getElementById('navRegister').style.display = 'none';
+    const navUser = document.getElementById('navUser');
+    navUser.style.display = 'flex';
+    document.getElementById('navUserName').textContent = profile.nombre || session.user.email.split('@')[0];
+    document.getElementById('navUserPlan').textContent = PLAN_LABELS[profile.plan] || profile.plan;
+
+    // Marcar plan actual y ajustar CTAs
+    _updateCTAsForUser(profile.plan);
+
+    // Pre-seleccionar plan desde URL
+    const urlPlan = new URLSearchParams(window.location.search).get('plan');
+    if (urlPlan && PRICING[urlPlan] && urlPlan !== profile.plan) {
+      setTimeout(() => openPaymentModal(urlPlan), 400);
+    }
+  } catch (e) {
+    console.warn('init planes error:', e);
+  }
+})();
+
+// ── Actualizar CTAs según plan actual ────────────────────────
+function _updateCTAsForUser(currentPlan) {
+  const plans = ['gratis', 'consultorio', 'profesional', 'firma'];
+
+  // CTA gratis: ir al chat si ya tiene cuenta
+  const ctaGratis = document.getElementById('cta-gratis');
+  ctaGratis.href  = 'usuario.html';
+  ctaGratis.textContent = currentPlan === 'gratis' ? '✓ Tu plan actual' : 'Ir al chat';
+  if (currentPlan === 'gratis') ctaGratis.className = 'plan-cta current';
+
+  // CTAs de pago
+  for (const plan of ['consultorio', 'profesional', 'firma']) {
+    const btn = document.getElementById('cta-' + plan);
+    if (!btn) continue;
+    if (plan === currentPlan) {
+      btn.textContent = '✓ Tu plan actual';
+      btn.className   = 'plan-cta current';
+      btn.onclick     = null;
+      // Marcar tarjeta
+      document.getElementById('card-' + plan)?.classList.add('current-plan');
+      // Insertar badge
+      const badge = document.createElement('div');
+      badge.className   = 'current-badge';
+      badge.textContent = '✓ Plan activo';
+      document.getElementById('card-' + plan)?.appendChild(badge);
+    } else {
+      // Planes inferiores al actual
+      const currentIdx = plans.indexOf(currentPlan);
+      const planIdx    = plans.indexOf(plan);
+      if (planIdx < currentIdx) {
+        btn.textContent = 'Cambiar a este plan';
+        btn.className   = 'plan-cta outline';
+      }
+    }
+  }
+}
+
+// ── Billing toggle ────────────────────────────────────────────
 function setBilling(mode) {
   billing = mode;
   document.getElementById('btnMonthly').classList.toggle('active', mode === 'monthly');
-  document.getElementById('btnAnnual').classList.toggle('active', mode === 'annual');
+  document.getElementById('btnAnnual').classList.toggle('active',  mode === 'annual');
 
   const prices = {
-    cons:  { monthly: '$9',  annual: '$86.4', period: 'USD / mes', period_a: 'USD / año' },
-    pro:   { monthly: '$25', annual: '$240',  period: 'USD / mes', period_a: 'USD / año' },
-    firma: { monthly: '$79', annual: '$758',  period: 'USD / mes', period_a: 'USD / año' },
+    cons:  { monthly: '$9',  annual: '$86',  period: 'USD / mes', period_a: 'USD / año' },
+    pro:   { monthly: '$25', annual: '$240', period: 'USD / mes', period_a: 'USD / año' },
+    firma: { monthly: '$79', annual: '$758', period: 'USD / mes', period_a: 'USD / año' },
   };
 
   for (const [key, val] of Object.entries(prices)) {
     const isAnnual = mode === 'annual';
-    document.getElementById('p-' + key).textContent = isAnnual ? val.annual : val.monthly;
+    document.getElementById('p-'  + key).textContent = isAnnual ? val.annual  : val.monthly;
     document.getElementById('pp-' + key).textContent = isAnnual ? val.period_a : val.period;
     document.getElementById('pa-' + key).style.display = isAnnual ? 'block' : 'none';
   }
 }
 
+// ── Abrir modal de pago ───────────────────────────────────────
+function openPaymentModal(plan) {
+  if (!PLANES_SESSION) {
+    // No logueado: redirigir a login con intención
+    window.location.href = 'login.html?redirect=planes.html&plan=' + plan;
+    return;
+  }
+  if (PLANES_PROFILE?.plan === plan) return; // ya tiene este plan
+
+  modalPlan = plan;
+  const pricing = PRICING[plan];
+  const isAnnual = billing === 'annual';
+  const price = isAnnual
+    ? `$${pricing.annual_usd} USD/año`
+    : `$${pricing.usd} USD/mes`;
+
+  document.getElementById('modalPlanInfo').innerHTML =
+    `Plan <strong>${PLAN_LABELS[plan]}</strong> · ${price}`;
+
+  // Reset estado del modal
+  document.getElementById('modalContent').style.display = 'block';
+  document.getElementById('modalSpinner').style.display = 'none';
+  document.getElementById('modalError').style.display   = 'none';
+  document.getElementById('modalMsg').textContent       = '';
+
+  document.getElementById('paymentModalOverlay').classList.add('open');
+}
+
+function closePaymentModal(event) {
+  if (event && event.target !== document.getElementById('paymentModalOverlay')) return;
+  document.getElementById('paymentModalOverlay').classList.remove('open');
+  modalPlan = null;
+}
+
+// ── Pago con Wompi ────────────────────────────────────────────
+async function handleWompiPay() {
+  if (!modalPlan || !PLANES_SESSION) return;
+
+  _setModalLoading(true, 'Preparando pago con Wompi...');
+
+  try {
+    const pricing   = PRICING[modalPlan];
+    const isAnnual  = billing === 'annual';
+    const amountCop = isAnnual ? pricing.annual_cop : pricing.cop;
+    const amountUsd = isAnnual ? pricing.annual_usd : pricing.usd;
+
+    // 1. Registrar intención de pago en BD
+    const { data: payment, error: payErr } = await sbPlanes
+      .from('legali_payments')
+      .insert({
+        user_id:    PLANES_SESSION.user.id,
+        provider:   'wompi',
+        plan:       modalPlan,
+        amount_usd: amountUsd,
+        amount_cop: amountCop,
+        status:     'pending',
+      })
+      .select('id')
+      .single();
+
+    if (payErr || !payment) throw new Error('Error registrando intención de pago');
+
+    const reference = `LEGALI-${modalPlan.toUpperCase()}-${payment.id.slice(0,8).toUpperCase()}`;
+
+    const WOMPI_PUBLIC_KEY = (window.LEGALI_PAYMENT_KEYS && window.LEGALI_PAYMENT_KEYS.WOMPI_PUBLIC_KEY)
+      || 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
+
+    // 2. Construir URL de Wompi Checkout
+    const params = new URLSearchParams({
+      'public-key':          WOMPI_PUBLIC_KEY,
+      currency:              'COP',
+      'amount-in-cents':     String(amountCop * 100),
+      reference,
+      'redirect-url':        `${window.location.origin}${window.location.pathname.replace('planes.html','usuario.html')}?payment=wompi&ref=${reference}&pid=${payment.id}`,
+      'customer-data:email': PLANES_SESSION.user.email,
+    });
+
+    _setModalLoading(false);
+    document.getElementById('paymentModalOverlay').classList.remove('open');
+
+    window.open(`https://checkout.wompi.co/p/?${params.toString()}`, '_blank');
+    _showToast('🏦 Redirigiendo a Wompi... Completa el pago en la ventana que se abrió.', 'info');
+
+  } catch (e) {
+    console.error('handleWompiPay error:', e);
+    _setModalLoading(false);
+    _showModalError('Error al iniciar el pago. Intenta de nuevo.');
+  }
+}
+
+// ── Pago con MercadoPago ──────────────────────────────────────
+async function handleMercadoPagoPay() {
+  if (!modalPlan || !PLANES_SESSION) return;
+
+  _setModalLoading(true, 'Creando preferencia en MercadoPago...');
+
+  try {
+    const pricing   = PRICING[modalPlan];
+    const isAnnual  = billing === 'annual';
+    const amountUsd = isAnnual ? pricing.annual_usd : pricing.usd;
+
+    // 1. Registrar intención de pago en BD
+    const { data: payment, error: payErr } = await sbPlanes
+      .from('legali_payments')
+      .insert({
+        user_id:    PLANES_SESSION.user.id,
+        provider:   'mercadopago',
+        plan:       modalPlan,
+        amount_usd: amountUsd,
+        status:     'pending',
+      })
+      .select('id')
+      .single();
+
+    if (payErr || !payment) throw new Error('Error registrando intención de pago');
+
+    // 2. Llamar Edge Function create-mp-preference
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-mp-preference`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${PLANES_SESSION.access_token}`,
+      },
+      body: JSON.stringify({
+        plan:       modalPlan,
+        period:     billing === 'annual' ? 'annual' : 'monthly',
+        payment_id: payment.id,
+        amount_usd: amountUsd,
+        user_email: PLANES_SESSION.user.email,
+      }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok || !body.init_point) {
+      throw new Error(body.message || 'MercadoPago no devolvió init_point');
+    }
+
+    _setModalLoading(false);
+    document.getElementById('paymentModalOverlay').classList.remove('open');
+
+    window.open(body.init_point, '_blank');
+    _showToast('💙 Redirigiendo a MercadoPago... Completa el pago en la ventana que se abrió.', 'info');
+
+  } catch (e) {
+    console.error('handleMercadoPagoPay error:', e);
+    _setModalLoading(false);
+    _showModalError(e.message || 'Error al iniciar el pago. Intenta de nuevo.');
+  }
+}
+
+// ── Helpers del modal ─────────────────────────────────────────
+function _setModalLoading(loading, msg = '') {
+  document.getElementById('modalContent').style.display = loading ? 'none' : 'block';
+  document.getElementById('modalSpinner').style.display = loading ? 'block' : 'none';
+  document.getElementById('modalMsg').textContent       = msg;
+}
+
+function _showModalError(msg) {
+  document.getElementById('modalContent').style.display = 'block';
+  const err = document.getElementById('modalError');
+  err.textContent = '⚠️ ' + msg;
+  err.style.display = 'block';
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function _showToast(msg, type = 'success') {
+  const colors = {
+    success: { bg: 'rgba(13,158,108,0.15)', border: 'rgba(13,158,108,0.4)', color: '#6EE7B7' },
+    info:    { bg: 'rgba(27,79,216,0.18)',  border: 'rgba(59,130,246,0.4)', color: '#93C5FD' },
+    error:   { bg: 'rgba(220,38,38,0.15)',  border: 'rgba(220,38,38,0.3)', color: '#FCA5A5' },
+  };
+  const c = colors[type] || colors.success;
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    background:${c.bg}; border:1px solid ${c.border}; color:${c.color};
+    padding:14px 20px; border-radius:10px; font-size:14px; font-weight:500;
+    max-width:340px; box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  `;
+  toast.textContent = msg;
+  document.getElementById('toastContainer').appendChild(toast);
+  setTimeout(() => toast.remove(), 7000);
+}
+
+// ── FAQ ───────────────────────────────────────────────────────
 function toggleFaq(el) {
   el.closest('.faq-item').classList.toggle('open');
 }
 
-// Pre-select plan from URL params
-const urlPlan = new URLSearchParams(window.location.search).get('plan');
-if (urlPlan) {
-  // Highlight the matching plan card if it exists on this page
+// ── Pre-seleccionar plan desde URL (no autenticado) ───────────
+const urlPlanGuest = new URLSearchParams(window.location.search).get('plan');
+if (urlPlanGuest) {
   document.querySelectorAll('.plan-card').forEach(card => {
-    if (card.querySelector('.plan-name')?.textContent.toLowerCase().includes(urlPlan)) {
+    const name = card.querySelector('.plan-name')?.textContent?.toLowerCase();
+    if (name && urlPlanGuest.toLowerCase().includes(name.split('/')[0].trim())) {
       card.style.boxShadow = '0 0 0 3px var(--gold)';
     }
   });

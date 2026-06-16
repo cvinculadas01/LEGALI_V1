@@ -1,0 +1,18 @@
+/*
+  # ============================================================
+  # LEGALI v2.0 — _headers
+  # Cloudflare Pages: cabeceras de seguridad para todas las rutas
+  #
+  # Instrucciones:
+  #   1. Copiar este archivo en la raíz de LEGALI-WEB/
+  #   2. Al conectar el repo a Cloudflare Pages, este archivo
+  #      se aplicará automáticamente en producción.
+  #   3. Ajustar connect-src con tu URL de Supabase real si cambia.
+  # ============================================================
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://gunfflxviwauixdymsfk.supabase.co https://api.anthropic.com https://api.groq.com https://api.openai.com https://api.mercadopago.com https://wompi.co https://checkout.wompi.co; frame-src https://checkout.wompi.co https://www.mercadopago.com https://mercadopago.com; object-src 'none'; base-uri 'self';
