@@ -241,9 +241,8 @@
 
 <script>
 // ── Auth guard con Supabase Auth real ─────────────────────────
-const SUPABASE_URL_U = "https://gunfflxviwauixdymsfk.supabase.co";
-const SUPABASE_KEY_U = "sb_publishable_sHvriOKj2t58aApfn9kCSw_U5gAVn-v";
-const sbUser = supabase.createClient(SUPABASE_URL_U, SUPABASE_KEY_U);
+// Reutilizar el cliente ya creado en supabase.js (evita múltiples instancias GoTrueClient)
+const sbUser = supabaseClient;
 
 const PLAN_QUOTAS = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999 };
 const PLAN_LABELS = { gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado' };
