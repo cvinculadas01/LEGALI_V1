@@ -596,6 +596,9 @@ async function exportWord() {
     return;
   }
 
+  // Esperar a que la librería cargue (se carga asíncrono desde CDN)
+  if (window._docxReady) await window._docxReady;
+
   if (typeof docx === 'undefined') {
     alert('Librería Word no disponible. Usa exportar PDF.');
     return;
