@@ -242,7 +242,7 @@ button.plan-cta { cursor: pointer; }
   <h1>El asistente jurídico<br/><span>que trabaja contigo</span></h1>
   <p>RAG sobre normativa colombiana, exportación profesional y respuestas con citación de fuentes.</p>
 
-  <div class="billing-toggle">
+  <div class="billing-toggle" style="display:none">
     <button class="billing-btn active" id="btnMonthly" onclick="setBilling('monthly')">Mensual</button>
     <button class="billing-btn" id="btnAnnual" onclick="setBilling('annual')">Anual <span style="color:var(--gold-light);font-size:11px;margin-left:4px">-20%</span></button>
   </div>
@@ -265,30 +265,10 @@ button.plan-cta { cursor: pointer; }
         <div class="plan-divider"></div>
         <div class="features-title">Incluye</div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>5 consultas / mes</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>IA Groq Llama 3 (ultra rápido)</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Acceso a biblioteca jurídica</span></div>
         <div class="feature-item"><span class="feature-icon cross">✗</span><span style="color:#4A5568">Exportar PDF / Word</span></div>
         <div class="feature-item"><span class="feature-icon cross">✗</span><span style="color:#4A5568">Subir documentos</span></div>
         <div class="feature-item"><span class="feature-icon cross">✗</span><span style="color:#4A5568">Historial guardado</span></div>
-      </div>
-
-      <!-- Consultorio -->
-      <div class="plan-card" id="card-consultorio">
-        <div class="plan-icon">🏢</div>
-        <div class="plan-name">Consultorio</div>
-        <div class="plan-desc">Para abogados y consultores independientes</div>
-        <div class="plan-price">
-          <div><span class="amount" id="p-cons">$9</span> <span class="period" id="pp-cons">USD / mes</span></div>
-          <div class="annual-note" id="pa-cons" style="display:none">Equivale a $7.2/mes · facturado anualmente</div>
-        </div>
-        <button class="plan-cta outline" id="cta-consultorio" onclick="openPaymentModal('consultorio')">Contratar plan</button>
-        <div class="plan-divider"></div>
-        <div class="features-title">Todo lo anterior más</div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>50 consultas / mes</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>IA GPT-4o mini</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>Exportar PDF y Word</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>Historial 30 días</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>Subir documentos (2 MB)</span></div>
       </div>
 
       <!-- Profesional — FEATURED -->
@@ -299,13 +279,13 @@ button.plan-cta { cursor: pointer; }
         <div class="plan-desc">Para litigantes y firmas pequeñas activas</div>
         <div class="plan-price">
           <div><span class="amount" id="p-pro">$25</span> <span class="period" id="pp-pro">USD / mes</span></div>
-          <div class="annual-note" id="pa-pro" style="display:none">Equivale a $20/mes · facturado anualmente</div>
         </div>
         <button class="plan-cta filled" id="cta-profesional" onclick="openPaymentModal('profesional')">Contratar plan</button>
         <div class="plan-divider"></div>
         <div class="features-title">Todo lo anterior más</div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>200 consultas / mes</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>IA Claude Sonnet (mejor calidad)</span></div>
+        <div class="feature-item"><span class="feature-icon check">✓</span><span>Límites de uso más altos</span></div>
+        <div class="feature-item"><span class="feature-icon check">✓</span><span>Acceso a biblioteca jurídica</span></div>
+        <div class="feature-item"><span class="feature-icon check">✓</span><span>Exportar PDF y Word</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Historial 90 días</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Subir documentos (10 MB)</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>RAG sobre tu biblioteca privada</span></div>
@@ -317,18 +297,16 @@ button.plan-cta { cursor: pointer; }
         <div class="plan-name">Firma / Juzgado</div>
         <div class="plan-desc">Para firmas y entidades con alto volumen</div>
         <div class="plan-price">
-          <div><span class="amount" id="p-firma">$79</span> <span class="period" id="pp-firma">USD / mes</span></div>
-          <div class="annual-note" id="pa-firma" style="display:none">Equivale a $63/mes · facturado anualmente</div>
+          <div><span class="amount" id="p-firma">$135</span> <span class="period" id="pp-firma">USD / mes</span></div>
         </div>
         <button class="plan-cta gold" id="cta-firma" onclick="openPaymentModal('firma')">Contratar plan</button>
         <div class="plan-divider"></div>
         <div class="features-title">Todo lo anterior más</div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>Consultas ilimitadas</span></div>
+        <div class="feature-item"><span class="feature-icon check">✓</span><span>Uso de alto volumen</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>IA Claude Opus (máxima calidad)</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Historial indefinido</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Documentos hasta 100 MB</span></div>
         <div class="feature-item"><span class="feature-icon check">✓</span><span>Soporte prioritario</span></div>
-        <div class="feature-item"><span class="feature-icon check">✓</span><span>API de acceso (próximamente)</span></div>
       </div>
 
     </div>
@@ -341,27 +319,25 @@ button.plan-cta { cursor: pointer; }
   <table class="comp-table">
     <thead>
       <tr>
-        <th style="width:30%">Característica</th>
+        <th style="width:35%">Característica</th>
         <th>Gratis</th>
-        <th>Consultorio</th>
-        <th style="color:var(--gold-light)">Profesional</th>
-        <th>Firma</th>
+        <th style="color:var(--primary-light)">Profesional</th>
+        <th style="color:var(--gold-light)">Firma</th>
       </tr>
     </thead>
     <tbody>
-      <tr class="comp-cat"><td colspan="5">Uso mensual</td></tr>
-      <tr><td>Consultas / mes</td><td class="comp-val">5</td><td class="comp-val">50</td><td class="comp-val">200</td><td class="comp-val">Ilimitadas</td></tr>
-      <tr><td>Modelo de IA</td><td>Groq Llama 3</td><td>GPT-4o mini</td><td class="comp-val">Claude Sonnet</td><td class="comp-val">Claude Opus</td></tr>
-      <tr class="comp-cat"><td colspan="5">Funcionalidades</td></tr>
-      <tr><td>Exportar PDF</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
-      <tr><td>Exportar Word</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
-      <tr><td>Subir documentos</td><td class="comp-cross">✗</td><td class="comp-val">2 MB</td><td class="comp-val">10 MB</td><td class="comp-val">100 MB</td></tr>
-      <tr><td>Historial de conversaciones</td><td>Solo sesión</td><td class="comp-val">30 días</td><td class="comp-val">90 días</td><td class="comp-val">Indefinido</td></tr>
-      <tr><td>RAG biblioteca jurídica</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
-      <tr><td>RAG documentos privados</td><td class="comp-cross">✗</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
-      <tr class="comp-cat"><td colspan="5">Soporte</td></tr>
-      <tr><td>Soporte por email</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
-      <tr><td>Soporte prioritario</td><td class="comp-cross">✗</td><td class="comp-cross">✗</td><td class="comp-cross">✗</td><td class="comp-check">✓</td></tr>
+      <tr class="comp-cat"><td colspan="4">Uso mensual</td></tr>
+      <tr><td>Modelo de IA</td><td>Groq Llama 3</td><td class="comp-val">Claude Sonnet</td><td class="comp-val">Claude Opus</td></tr>
+      <tr class="comp-cat"><td colspan="4">Funcionalidades</td></tr>
+      <tr><td>Exportar PDF</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
+      <tr><td>Exportar Word</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
+      <tr><td>Subir documentos</td><td class="comp-cross">✗</td><td class="comp-val">10 MB</td><td class="comp-val">100 MB</td></tr>
+      <tr><td>Historial de conversaciones</td><td>Solo sesión</td><td class="comp-val">90 días</td><td class="comp-val">Indefinido</td></tr>
+      <tr><td>RAG biblioteca jurídica</td><td class="comp-check">✓</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
+      <tr><td>RAG documentos privados</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
+      <tr class="comp-cat"><td colspan="4">Soporte</td></tr>
+      <tr><td>Soporte por email</td><td class="comp-cross">✗</td><td class="comp-check">✓</td><td class="comp-check">✓</td></tr>
+      <tr><td>Soporte prioritario</td><td class="comp-cross">✗</td><td class="comp-cross">✗</td><td class="comp-check">✓</td></tr>
     </tbody>
   </table>
 </section>
@@ -461,13 +437,12 @@ let modalPlan      = null;
 let billing        = 'monthly';
 
 const PRICING = {
-  consultorio: { usd: 9,  cop: 37800,  annual_usd: 86,  annual_cop: 362880 },
-  profesional: { usd: 25, cop: 105000, annual_usd: 240, annual_cop: 1008000 },
-  firma:       { usd: 79, cop: 331800, annual_usd: 758, annual_cop: 3182400 },
+  profesional: { usd: 25,  cop: 105000 },
+  firma:       { usd: 135, cop: 567000 },
 };
 
 const PLAN_LABELS = {
-  gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado'
+  gratis: 'Gratis', profesional: 'Profesional', firma: 'Firma / Juzgado', admin: 'Admin'
 };
 
 // ── Init: verificar sesión ────────────────────────────────────
@@ -509,7 +484,7 @@ const PLAN_LABELS = {
 
 // ── Actualizar CTAs según plan actual ────────────────────────
 function _updateCTAsForUser(currentPlan) {
-  const plans = ['gratis', 'consultorio', 'profesional', 'firma'];
+  const plans = ['gratis', 'profesional', 'firma'];
 
   // CTA gratis: ir al chat si ya tiene cuenta
   const ctaGratis = document.getElementById('cta-gratis');
@@ -518,7 +493,7 @@ function _updateCTAsForUser(currentPlan) {
   if (currentPlan === 'gratis') ctaGratis.className = 'plan-cta current';
 
   // CTAs de pago
-  for (const plan of ['consultorio', 'profesional', 'firma']) {
+  for (const plan of ['profesional', 'firma']) {
     const btn = document.getElementById('cta-' + plan);
     if (!btn) continue;
     if (plan === currentPlan) {
@@ -544,46 +519,28 @@ function _updateCTAsForUser(currentPlan) {
   }
 }
 
-// ── Billing toggle ────────────────────────────────────────────
+// ── Billing toggle (solo mensual — anual desactivado) ─────────
 function setBilling(mode) {
-  billing = mode;
-  document.getElementById('btnMonthly').classList.toggle('active', mode === 'monthly');
-  document.getElementById('btnAnnual').classList.toggle('active',  mode === 'annual');
-
-  const prices = {
-    cons:  { monthly: '$9',  annual: '$86',  period: 'USD / mes', period_a: 'USD / año' },
-    pro:   { monthly: '$25', annual: '$240', period: 'USD / mes', period_a: 'USD / año' },
-    firma: { monthly: '$79', annual: '$758', period: 'USD / mes', period_a: 'USD / año' },
-  };
-
-  for (const [key, val] of Object.entries(prices)) {
-    const isAnnual = mode === 'annual';
-    document.getElementById('p-'  + key).textContent = isAnnual ? val.annual  : val.monthly;
-    document.getElementById('pp-' + key).textContent = isAnnual ? val.period_a : val.period;
-    document.getElementById('pa-' + key).style.display = isAnnual ? 'block' : 'none';
-  }
+  billing = 'monthly'; // Facturación anual eliminada en v3.0
+  document.getElementById('btnMonthly').classList.add('active');
+  document.getElementById('btnAnnual').classList.remove('active');
 }
 
 // ── Abrir modal de pago ───────────────────────────────────────
 function openPaymentModal(plan) {
   if (!PLANES_SESSION) {
-    // No logueado: redirigir a login con intención
     window.location.href = 'login.html?redirect=planes.html&plan=' + plan;
     return;
   }
-  if (PLANES_PROFILE?.plan === plan) return; // ya tiene este plan
+  if (PLANES_PROFILE?.plan === plan) return;
 
   modalPlan = plan;
   const pricing = PRICING[plan];
-  const isAnnual = billing === 'annual';
-  const price = isAnnual
-    ? `$${pricing.annual_usd} USD/año`
-    : `$${pricing.usd} USD/mes`;
+  if (!pricing) return;
 
   document.getElementById('modalPlanInfo').innerHTML =
-    `Plan <strong>${PLAN_LABELS[plan]}</strong> · ${price}`;
+    `Plan <strong>${PLAN_LABELS[plan]}</strong> · $${pricing.usd} USD/mes`;
 
-  // Reset estado del modal
   document.getElementById('modalContent').style.display = 'block';
   document.getElementById('modalSpinner').style.display = 'none';
   document.getElementById('modalError').style.display   = 'none';
@@ -605,12 +562,10 @@ async function handleWompiPay() {
   _setModalLoading(true, 'Preparando pago con Wompi...');
 
   try {
-    const pricing   = PRICING[modalPlan];
-    const isAnnual  = billing === 'annual';
-    const amountCop = isAnnual ? pricing.annual_cop : pricing.cop;
-    const amountUsd = isAnnual ? pricing.annual_usd : pricing.usd;
+    const pricing     = PRICING[modalPlan];
+    const amountCop   = pricing.cop;
+    const amountUsd   = pricing.usd;
 
-    // 1. Registrar intención de pago en BD
     const { data: payment, error: payErr } = await sbPlanes
       .from('legali_payments')
       .insert({
@@ -631,7 +586,6 @@ async function handleWompiPay() {
     const WOMPI_PUBLIC_KEY = (window.LEGALI_PAYMENT_KEYS && window.LEGALI_PAYMENT_KEYS.WOMPI_PUBLIC_KEY)
       || 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
 
-    // 2. Construir URL de Wompi Checkout
     const params = new URLSearchParams({
       'public-key':          WOMPI_PUBLIC_KEY,
       currency:              'COP',
@@ -662,10 +616,8 @@ async function handleMercadoPagoPay() {
 
   try {
     const pricing   = PRICING[modalPlan];
-    const isAnnual  = billing === 'annual';
-    const amountUsd = isAnnual ? pricing.annual_usd : pricing.usd;
+    const amountUsd = pricing.usd;
 
-    // 1. Registrar intención de pago en BD
     const { data: payment, error: payErr } = await sbPlanes
       .from('legali_payments')
       .insert({
@@ -680,7 +632,6 @@ async function handleMercadoPagoPay() {
 
     if (payErr || !payment) throw new Error('Error registrando intención de pago');
 
-    // 2. Llamar Edge Function create-mp-preference
     const res = await fetch(`${SUPABASE_URL}/functions/v1/create-mp-preference`, {
       method:  'POST',
       headers: {
@@ -689,7 +640,6 @@ async function handleMercadoPagoPay() {
       },
       body: JSON.stringify({
         plan:       modalPlan,
-        period:     billing === 'annual' ? 'annual' : 'monthly',
         payment_id: payment.id,
         amount_usd: amountUsd,
         user_email: PLANES_SESSION.user.email,
