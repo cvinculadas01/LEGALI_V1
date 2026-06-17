@@ -235,11 +235,6 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
     <div class="step-line"></div>
     <div class="step-wrap">
       <div class="step-dot" id="dot2">2</div>
-      <div class="step-label">Plan</div>
-    </div>
-    <div class="step-line"></div>
-    <div class="step-wrap">
-      <div class="step-dot" id="dot3">3</div>
       <div class="step-label">Listo</div>
     </div>
   </div>
@@ -278,7 +273,6 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
         <select id="inputProfesion" class="form-input">
           <option value="">Seleccionar...</option>
           <option value="abogado">Abogado(a)</option>
-          <option value="estudiante">Estudiante de Derecho</option>
           <option value="juez">Juez / Magistrado</option>
           <option value="fiscal">Fiscal</option>
           <option value="empresa">Empresa / Corporativo</option>
@@ -299,87 +293,17 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
       </label>
     </div>
 
-    <button class="btn-primary" id="btnStep1" onclick="goStep2()">
-      Continuar — Elegir plan
+    <button class="btn-primary" id="btnStep1" onclick="doRegister()">
+      Crear cuenta gratis
     </button>
     <div class="login-link">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></div>
   </div>
 
-  <!-- PASO 2: Elegir plan -->
-  <div class="reg-card step-panel" id="step2" style="max-width:760px;">
-    <div class="card-title">Elige tu plan</div>
-    <div class="card-sub">Puedes cambiar o cancelar en cualquier momento</div>
-
-    <div class="alert alert-error" id="err2"></div>
-
-    <div class="plans-grid">
-      <div class="plan-card" id="plan-gratis" onclick="selectPlan('gratis')">
-        <div class="plan-check"></div>
-        <div class="plan-name">Gratis</div>
-        <div class="plan-price">$0 <span>/ mes</span></div>
-        <ul class="plan-features">
-          <li>5 consultas al mes</li>
-          <li>IA: Groq (rápido)</li>
-          <li>Historial de sesión</li>
-          <li>Sin exportar PDF/Word</li>
-        </ul>
-      </div>
-      <div class="plan-card" id="plan-consultorio" onclick="selectPlan('consultorio')">
-        <div class="plan-check"></div>
-        <div class="plan-name">Consultorio</div>
-        <div class="plan-price">$9 <span>USD / mes</span></div>
-        <ul class="plan-features">
-          <li>50 consultas al mes</li>
-          <li>IA: GPT-4o mini</li>
-          <li>Exportar PDF y Word</li>
-          <li>Historial 30 días</li>
-          <li>Subir documentos (2 MB)</li>
-        </ul>
-      </div>
-      <div class="plan-card popular" id="plan-profesional" onclick="selectPlan('profesional')">
-        <div class="popular-badge">Más popular</div>
-        <div class="plan-check"></div>
-        <div class="plan-name">Profesional</div>
-        <div class="plan-price">$25 <span>USD / mes</span></div>
-        <ul class="plan-features">
-          <li>200 consultas al mes</li>
-          <li>IA: Claude Sonnet</li>
-          <li>Exportar PDF y Word</li>
-          <li>Historial 90 días</li>
-          <li>Subir documentos (10 MB)</li>
-          <li>RAG sobre tu biblioteca</li>
-        </ul>
-      </div>
-      <div class="plan-card" id="plan-firma" onclick="selectPlan('firma')">
-        <div class="plan-check"></div>
-        <div class="plan-name">Firma / Juzgado</div>
-        <div class="plan-price">$79 <span>USD / mes</span></div>
-        <ul class="plan-features">
-          <li>Consultas ilimitadas</li>
-          <li>IA: Claude Opus</li>
-          <li>Todo lo anterior</li>
-          <li>Documentos (100 MB)</li>
-          <li>Historial indefinido</li>
-          <li>Soporte prioritario</li>
-        </ul>
-      </div>
-    </div>
-
-    <div id="paymentNote" class="alert alert-info show" style="margin-bottom:16px">
-      Los planes de pago se activarán vía Wompi/MercadoPago. Por ahora puedes registrarte en Gratis y actualizar desde tu perfil.
-    </div>
-
-    <button class="btn-primary" id="btnStep2" onclick="doRegister()">
-      Crear cuenta
-    </button>
-    <button class="btn-secondary" onclick="goStep1()">← Volver</button>
-  </div>
-
-  <!-- PASO 3: Confirmación -->
-  <div class="reg-card step-panel" id="step3">
+  <!-- PASO 2: Confirmación -->
+  <div class="reg-card step-panel" id="step2">
     <div class="confirm-icon">🎉</div>
     <div class="confirm-title">¡Cuenta creada!</div>
-    <div class="confirm-sub">Te enviamos un correo de confirmación. Revisa tu bandeja de entrada.</div>
+    <div class="confirm-sub">Te enviamos un correo de confirmación. Revisa tu bandeja de entrada y luego inicia sesión.</div>
 
     <div class="confirm-details">
       <div class="confirm-row">
@@ -388,11 +312,11 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
       </div>
       <div class="confirm-row">
         <span class="cr-lbl">Plan</span>
-        <span class="cr-val" id="confPlan">—</span>
+        <span class="cr-val">Gratis · 5 consultas / mes</span>
       </div>
       <div class="confirm-row">
-        <span class="cr-lbl">Consultas disponibles</span>
-        <span class="cr-val" id="confQuota">—</span>
+        <span class="cr-lbl">¿Quieres más?</span>
+        <span class="cr-val"><a href="planes.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Ver planes →</a></span>
       </div>
     </div>
 
@@ -408,45 +332,32 @@ const SUPABASE_URL = "https://gunfflxviwauixdymsfk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sHvriOKj2t58aApfn9kCSw_U5gAVn-v";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Estado ───────────────────────────────────────────────────
-let selectedPlan = 'gratis';
-selectPlan('gratis');
-
-const PLAN_CONFIG = {
-  gratis:       { label: 'Gratis',          quota: 5,   price: 0,  provider: 'groq' },
-  consultorio:  { label: 'Consultorio',     quota: 50,  price: 9,  provider: 'openai' },
-  profesional:  { label: 'Profesional',     quota: 200, price: 25, provider: 'anthropic' },
-  firma:        { label: 'Firma / Juzgado', quota: 9999,price: 79, provider: 'anthropic' },
-};
-
-function selectPlan(plan) {
-  selectedPlan = plan;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  const el = document.getElementById('plan-' + plan);
-  if (el) el.classList.add('selected');
-}
-
-// ── Navegación entre pasos ───────────────────────────────────
+// ── Navegación entre pasos (solo 2 pasos) ────────────────────
 function setStep(n) {
-  [1, 2, 3].forEach(i => {
+  [1, 2].forEach(i => {
     document.getElementById('step' + i).classList.toggle('active', i === n);
     const dot = document.getElementById('dot' + i);
+    if (!dot) return;
     dot.classList.remove('active', 'done');
     if (i < n) dot.classList.add('done');
     else if (i === n) dot.classList.add('active');
   });
 }
 
-function goStep1() { setStep(1); }
+// ── Registro — siempre crea cuenta gratis ────────────────────
+const CONSENT_VERSION = '2026-06-v1';
 
-function goStep2() {
-  const nombre   = document.getElementById('inputNombre').value.trim();
-  const apellido = document.getElementById('inputApellido').value.trim();
-  const email    = document.getElementById('inputEmail').value.trim();
-  const pass     = document.getElementById('inputPass').value;
-  const pass2    = document.getElementById('inputPass2').value;
-  const err      = document.getElementById('err1');
+async function doRegister() {
+  const nombre    = document.getElementById('inputNombre').value.trim();
+  const apellido  = document.getElementById('inputApellido').value.trim();
+  const email     = document.getElementById('inputEmail').value.trim();
+  const pass      = document.getElementById('inputPass').value;
+  const pass2     = document.getElementById('inputPass2').value;
+  const profesion = document.getElementById('inputProfesion').value;
+  const btn       = document.getElementById('btnStep1');
+  const err       = document.getElementById('err1');
 
+  // Validaciones
   if (!nombre || !apellido) return showAlert(err, 'Ingresa tu nombre y apellido.');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert(err, 'Correo electrónico inválido.');
   if (pass.length < 8) return showAlert(err, 'La contraseña debe tener mínimo 8 caracteres.');
@@ -457,27 +368,11 @@ function goStep2() {
   }
 
   err.classList.remove('show');
-  setStep(2);
-}
-
-// ── Registro ─────────────────────────────────────────────────
-const CONSENT_VERSION = '2026-06-v1';
-
-async function doRegister() {
-  const email    = document.getElementById('inputEmail').value.trim();
-  const pass     = document.getElementById('inputPass').value;
-  const nombre   = document.getElementById('inputNombre').value.trim();
-  const apellido = document.getElementById('inputApellido').value.trim();
-  const profesion = document.getElementById('inputProfesion').value;
-  const btn      = document.getElementById('btnStep2');
-  const err      = document.getElementById('err2');
-  const plan     = PLAN_CONFIG[selectedPlan];
-
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Creando cuenta...';
 
   try {
-    // 1. Crear usuario en Supabase Auth
+    // 1. Crear usuario en Supabase Auth — siempre plan gratis
     const { data: authData, error: authError } = await sb.auth.signUp({
       email,
       password: pass,
@@ -486,7 +381,7 @@ async function doRegister() {
           nombre,
           apellido,
           profesion,
-          plan: selectedPlan,
+          plan: 'gratis',   // Siempre gratis al registrarse
         }
       }
     });
@@ -496,35 +391,33 @@ async function doRegister() {
     const userId = authData.user?.id;
     if (!userId) throw new Error('No se pudo crear el usuario.');
 
-    // 2. Insertar perfil en tabla legali_profiles
+    // 2. Insertar perfil en legali_profiles — siempre gratis
+    // El trigger handle_new_user también lo hace, el ON CONFLICT evita duplicados
     const { error: profileError } = await sb.from('legali_profiles').insert({
-      id: userId,
+      id:                userId,
       nombre,
       apellido,
       email,
-      profesion: profesion || null,
-      plan: selectedPlan,
-      plan_label: plan.label,
-      provider_assigned: plan.provider,
-      quota_total: plan.quota,
-      quota_used: 0,
-      active: true,
-      consent_given_at: new Date().toISOString(),
-      consent_version: CONSENT_VERSION,
+      profesion:         profesion || null,
+      plan:              'gratis',
+      provider_assigned: 'groq',
+      quota_total:       5,
+      quota_used:        0,
+      active:            true,
+      consent_given_at:  new Date().toISOString(),
+      consent_version:   CONSENT_VERSION,
     });
 
     if (profileError) {
-      // No bloquear si ya existe (el trigger puede haberlo creado)
+      // No bloquear si el trigger ya lo creó
       if (!profileError.message.includes('duplicate') && !profileError.message.includes('already exists')) {
         console.warn('Profile insert warning:', profileError.message);
       }
     }
 
     // 3. Mostrar confirmación
-    document.getElementById('confEmail').textContent  = email;
-    document.getElementById('confPlan').textContent   = plan.label;
-    document.getElementById('confQuota').textContent  = plan.quota === 9999 ? 'Ilimitadas' : plan.quota + ' / mes';
-    setStep(3);
+    document.getElementById('confEmail').textContent = email;
+    setStep(2);
 
   } catch (e) {
     let msg = e.message || 'Error al crear la cuenta.';
@@ -533,7 +426,7 @@ async function doRegister() {
     }
     showAlert(err, msg, true);
     btn.disabled = false;
-    btn.innerHTML = 'Crear cuenta';
+    btn.innerHTML = 'Crear cuenta gratis';
   }
 }
 
@@ -542,7 +435,7 @@ function showAlert(el, msg, html = false) {
   el.classList.add('show');
 }
 
-// Si ya hay sesión activa, redirigir
+// Si ya hay sesión activa, redirigir directo al chat
 (async function () {
   const { data: { session } } = await sb.auth.getSession();
   if (session) window.location.href = 'usuario.html';
