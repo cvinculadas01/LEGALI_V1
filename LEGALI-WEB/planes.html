@@ -253,8 +253,8 @@ button.plan-cta { cursor: pointer; }
   <div class="plans-wrap">
     <div class="plans-grid">
 
-      <!-- Gratis -->
-      <div class="plan-card" id="card-gratis">
+      <!-- Gratis — oculto, solo referencia para usuarios sin plan -->
+      <div class="plan-card" id="card-gratis" style="display:none">
         <div class="plan-icon">🆓</div>
         <div class="plan-name">Gratis</div>
         <div class="plan-desc">Para explorar y conocer el asistente</div>
@@ -393,25 +393,29 @@ button.plan-cta { cursor: pointer; }
     <div class="modal-plan-info" id="modalPlanInfo">Selecciona tu método de pago</div>
 
     <div id="modalContent">
-      <div class="modal-label">Elige tu pasarela de pago</div>
-      <div class="payment-options">
-        <button class="payment-btn" id="btnPayWompi" onclick="handleWompiPay()">
-          <span class="payment-btn-icon">🏦</span>
-          <div>
-            <div class="payment-btn-name">Wompi</div>
-            <div class="payment-btn-desc">Tarjeta, PSE, Efecty, Baloto · Colombia (COP)</div>
-          </div>
-        </button>
-        <button class="payment-btn" id="btnPayMP" onclick="handleMercadoPagoPay()">
-          <span class="payment-btn-icon">💙</span>
-          <div>
-            <div class="payment-btn-name">MercadoPago</div>
-            <div class="payment-btn-desc">Tarjeta, PSE, efectivo · Latinoamérica (USD)</div>
-          </div>
-        </button>
+      <!-- PLACEHOLDER — activar cuando lleguen credenciales de pago -->
+      <div style="
+        background: rgba(27,79,216,0.08);
+        border: 1.5px dashed rgba(59,130,246,0.4);
+        border-radius: 10px;
+        padding: 24px 20px;
+        text-align: center;
+        margin-bottom: 16px;
+      ">
+        <div style="font-size: 32px; margin-bottom: 10px;">🔧</div>
+        <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">
+          Pasarela de pago en configuración
+        </div>
+        <div style="font-size: 13px; color: #8899AA; line-height: 1.6;">
+          Estamos configurando Wompi y MercadoPago.<br/>
+          Pronto podrás pagar con tarjeta, PSE, Efecty y más.<br/><br/>
+          <strong style="color:#F5C842;">¿Quieres activar tu plan ahora?</strong><br/>
+          Escríbenos a <a href="mailto:soporte@legali.co" style="color:var(--primary-light);text-decoration:none;font-weight:600;">soporte@legali.co</a>
+          y lo activamos manualmente.
+        </div>
       </div>
       <div class="modal-error" id="modalError"></div>
-      <button class="modal-close" onclick="closePaymentModal()">Cancelar</button>
+      <button class="modal-close" onclick="closePaymentModal()">Cerrar</button>
     </div>
 
     <div class="modal-spinner" id="modalSpinner"></div>
