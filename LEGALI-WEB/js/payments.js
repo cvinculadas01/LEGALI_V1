@@ -1,16 +1,23 @@
 // ============================================================
-// LEGALI v2.0 — js/payments.js
+// LEGALI v3.0 — js/payments.js
 // Wompi + MercadoPago + activación de plan
+// Cambios v3.0:
+//   - Eliminado plan 'consultorio'
+//   - Precio firma actualizado: $79 → $135 USD / $567.000 COP (TRM ≈ 4.200)
+//   - Eliminada facturación anual (simplificación)
+//   - Guard en initWompiCheckout e initMercadoPagoCheckout para planes inválidos
 // ============================================================
 
 'use strict';
 
 // ── Configuración de precios ──────────────────────────────────
+// ⚠️ Si la TRM cambia significativamente, actualizar cop de 'firma'
+// Fórmula: cop = usd × TRM  →  135 × 4.200 = 567.000
 const PRICING = {
-  consultorio: { usd: 9,  cop: 37800,  annual_usd: 86,  annual_cop: 362880 },
-  profesional: { usd: 25, cop: 105000, annual_usd: 240, annual_cop: 1008000 },
-  firma:       { usd: 79, cop: 331800, annual_usd: 758, annual_cop: 3182400 },
+  profesional: { usd: 25,  cop: 105000 },
+  firma:       { usd: 135, cop: 567000 },
 };
+// Nota: facturación anual eliminada. Si se reactiva, recalcular con TRM vigente.
 
 // Wompi public key — configurada en js/payment-keys.js (cargado antes
 // que este archivo). Para cambiar de sandbox a producción, editar
@@ -19,15 +26,14 @@ const WOMPI_PUBLIC_KEY = (window.LEGALI_PAYMENT_KEYS && window.LEGALI_PAYMENT_KE
   || 'pub_test_REEMPLAZAR_CON_TU_LLAVE_SANDBOX';
 
 // ── Wompi Checkout ────────────────────────────────────────────
-async function initWompiCheckout(plan, period = 'monthly') {
+async function initWompiCheckout(plan) {
   const user = window.LEGALI_USER;
   if (!user) { window.location.href = 'login.html'; return; }
 
   const pricing = PRICING[plan];
-  if (!pricing) { console.error('Plan inválido:', plan); return; }
+  if (!pricing) { console.error('Plan inválido para pago:', plan); return; }
 
-  const amountCop   = period === 'annual' ? pricing.annual_cop : pricing.cop;
-  const amountCents = amountCop * 100; // Wompi usa centavos
+  const amountCents = pricing.cop * 100; // Wompi usa centavos
 
   // Registrar intención de pago
   const { data: payment, error } = await supabaseClient
@@ -36,8 +42,8 @@ async function initWompiCheckout(plan, period = 'monthly') {
       user_id:    user.id,
       provider:   'wompi',
       plan,
-      amount_usd: period === 'annual' ? pricing.annual_usd : pricing.usd,
-      amount_cop: amountCop,
+      amount_usd: pricing.usd,
+      amount_cop: pricing.cop,
       status:     'pending',
     })
     .select('id')
@@ -61,14 +67,12 @@ async function initWompiCheckout(plan, period = 'monthly') {
 }
 
 // ── MercadoPago Checkout ──────────────────────────────────────
-async function initMercadoPagoCheckout(plan, period = 'monthly') {
+async function initMercadoPagoCheckout(plan) {
   const user = window.LEGALI_USER;
   if (!user) { window.location.href = 'login.html'; return; }
 
   const pricing = PRICING[plan];
-  if (!pricing) return;
-
-  const amountUsd = period === 'annual' ? pricing.annual_usd : pricing.usd;
+  if (!pricing) { console.error('Plan inválido para pago:', plan); return; }
 
   // Registrar intención de pago
   const { data: payment, error } = await supabaseClient
@@ -77,7 +81,7 @@ async function initMercadoPagoCheckout(plan, period = 'monthly') {
       user_id:    user.id,
       provider:   'mercadopago',
       plan,
-      amount_usd: amountUsd,
+      amount_usd: pricing.usd,
       status:     'pending',
     })
     .select('id')
@@ -96,9 +100,8 @@ async function initMercadoPagoCheckout(plan, period = 'monthly') {
       },
       body: JSON.stringify({
         plan,
-        period,
         payment_id:  payment.id,
-        amount_usd:  amountUsd,
+        amount_usd:  pricing.usd,
         user_email:  user.email,
       }),
     });

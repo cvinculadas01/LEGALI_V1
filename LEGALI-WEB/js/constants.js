@@ -1,6 +1,11 @@
 // ============================================================
-// LEGALI v2.0 — js/constants.js
+// LEGALI v3.0 — js/constants.js
 // Sin API keys. Solo configuración de UI y lógica de negocio.
+// Cambios v3.0:
+//   - Eliminado plan 'consultorio' y proveedor 'openai'
+//   - Agregado showQuota (oculta barra de cuota a planes de pago)
+//   - Modelos actualizados: firma → claude-opus-4-6
+//   - Colores y emojis actualizados
 // ============================================================
 
 'use strict';
@@ -13,49 +18,44 @@ const AI_PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy`;
 // ── Planes y cuotas ───────────────────────────────────────────
 const PLAN_CONFIG = {
   gratis: {
-    label:       'Plan Gratis',
-    quota:       5,
-    provider:    'groq',
-    model:       'llama-3.3-70b-versatile',
-    maxDocMB:    0,
-    color:       '#8899AA',
-    emoji:       '🆓',
-  },
-  consultorio: {
-    label:       'Consultorio',
-    quota:       50,
-    provider:    'openai',
-    model:       'gpt-4o-mini',
-    maxDocMB:    2,
-    color:       '#3B82F6',
-    emoji:       '⚖️',
+    label:     'Plan Gratis',
+    quota:     5,
+    provider:  'groq',
+    model:     'llama-3.3-70b-versatile',
+    maxDocMB:  0,
+    color:     '#8899AA',
+    emoji:     '🆓',
+    showQuota: true,    // Mostrar barra de cuota al usuario
   },
   profesional: {
-    label:       'Profesional',
-    quota:       200,
-    provider:    'anthropic',
-    model:       'claude-sonnet-4-6',
-    maxDocMB:    10,
-    color:       '#C8960A',
-    emoji:       '🏛️',
+    label:     'Profesional',
+    quota:     200,     // Interno — NO mostrar al usuario
+    provider:  'anthropic',
+    model:     'claude-sonnet-4-6',
+    maxDocMB:  10,
+    color:     '#3B82F6',
+    emoji:     '⚖️',
+    showQuota: false,   // Ocultar barra de cuota
   },
   firma: {
-    label:       'Firma / Juzgado',
-    quota:       9999,
-    provider:    'anthropic',
-    model:       'claude-opus-4-8',
-    maxDocMB:    100,
-    color:       '#0D9E6C',
-    emoji:       '🏢',
+    label:     'Firma / Juzgado',
+    quota:     900,     // Interno — NO mostrar al usuario
+    provider:  'anthropic',
+    model:     'claude-opus-4-6',
+    maxDocMB:  100,
+    color:     '#C8960A',
+    emoji:     '🏛️',
+    showQuota: false,   // Ocultar barra de cuota
   },
   admin: {
-    label:       'Administrador',
-    quota:       9999,
-    provider:    'anthropic',
-    model:       'claude-opus-4-8',
-    maxDocMB:    500,
-    color:       '#F5C842',
-    emoji:       '🛡️',
+    label:     'Administrador',
+    quota:     9999,
+    provider:  'anthropic',
+    model:     'claude-opus-4-6',
+    maxDocMB:  500,
+    color:     '#F5C842',
+    emoji:     '🛡️',
+    showQuota: false,
   },
 };
 
@@ -120,15 +120,14 @@ const RAG_CONFIG = {
 // ── Límites de documentos por plan ───────────────────────────
 const DOC_SIZE_LIMITS = {
   gratis:       0,
-  consultorio:  2  * 1024 * 1024,   // 2 MB
-  profesional:  10 * 1024 * 1024,   // 10 MB
+  profesional:  10  * 1024 * 1024,  // 10 MB
   firma:        100 * 1024 * 1024,  // 100 MB
   admin:        500 * 1024 * 1024,  // 500 MB
 };
 
 // ── Mensajes de error amigables ───────────────────────────────
 const ERROR_MESSAGES = {
-  quota_exhausted:    '⚠️ Has agotado tu cuota mensual. <a href="planes.html">Actualiza tu plan →</a>',
+  quota_exhausted:    '⚠️ Has alcanzado el límite de uso de tu plan este mes. <a href="planes.html">Ver planes →</a>',
   account_suspended:  '⛔ Tu cuenta está suspendida. Contacta soporte.',
   profile_not_found:  '❌ Perfil no encontrado. Intenta cerrar sesión y volver a ingresar.',
   network_error:      '🌐 Error de conexión. Verifica tu internet e intenta de nuevo.',
