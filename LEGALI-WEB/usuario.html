@@ -167,7 +167,7 @@
 
   <div class="divider"></div>
 
-  <!-- Documentos de sesión (solo planes Consultorio+) -->
+  <!-- Documentos de sesión (solo planes Profesional+) -->
   <div class="sidebar-section" id="docsSection">
     <label class="section-label">📎 Mis documentos (sesión)</label>
     <p class="section-hint" id="docsHint">Solo visibles en esta sesión</p>
@@ -245,8 +245,8 @@
 // Reutilizar el cliente ya creado en supabase.js (evita múltiples instancias GoTrueClient)
 const sbUser = supabaseClient;
 
-const PLAN_QUOTAS = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999 };
-const PLAN_LABELS = { gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado' };
+const PLAN_QUOTAS = { gratis: 5, profesional: 200, firma: 900, admin: 9999 };
+const PLAN_LABELS = { gratis: 'Gratis', profesional: 'Profesional', firma: 'Firma / Juzgado', admin: 'Admin' };
 
 let CURRENT_PROFILE = null;
 
@@ -291,7 +291,7 @@ let CURRENT_PROFILE = null;
     if (docsArea) {
       docsArea.style.opacity       = '.4';
       docsArea.style.pointerEvents = 'none';
-      document.getElementById('docsHint').textContent = 'Disponible desde plan Consultorio';
+      document.getElementById('docsHint').textContent = 'Disponible desde plan Profesional';
     }
   }
 
@@ -300,24 +300,33 @@ let CURRENT_PROFILE = null;
 })();
 
 function renderQuota(profile) {
-  const used        = profile.quota_used  || 0;
-  const total       = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
-  const isUnlimited = total === 9999;
-  const pct         = isUnlimited ? 0 : Math.min(100, Math.round(used / total * 100));
+  const used      = profile.quota_used  || 0;
+  const total     = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
+  const planCfg   = (typeof PLAN_CONFIG !== 'undefined') ? PLAN_CONFIG[profile.plan] : null;
+  const showQuota = planCfg ? planCfg.showQuota : (profile.plan === 'gratis');
+
+  // Planes de pago: ocultar barra de cuota al usuario
+  if (!showQuota) {
+    document.getElementById('quotaWidget').style.display = 'none';
+    document.getElementById('quotaExhausted').style.display = 'none';
+    return;
+  }
+
+  const pct = Math.min(100, Math.round(used / total * 100));
 
   document.getElementById('quotaWidget').style.display = 'block';
-  document.getElementById('quotaCount').textContent    = isUnlimited ? `${used} / ∞` : `${used} / ${total}`;
+  document.getElementById('quotaCount').textContent    = `${used} / ${total}`;
   document.getElementById('quotaPlanName').textContent = PLAN_LABELS[profile.plan] || profile.plan;
 
   const bar       = document.getElementById('quotaBarFill');
   bar.style.width = pct + '%';
   bar.className   = 'quota-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
 
-  if (!isUnlimited && used >= total) {
+  if (used >= total) {
     document.getElementById('quotaExhausted').style.display = 'block';
     const input = document.getElementById('userInput');
     const btn   = document.getElementById('sendBtn');
-    if (input) { input.disabled = true; input.placeholder = 'Cuota agotada. Actualiza tu plan.'; }
+    if (input) { input.disabled = true; input.placeholder = 'Has alcanzado el límite de tu plan este mes.'; }
     if (btn)   { btn.disabled = true; }
   }
 }
