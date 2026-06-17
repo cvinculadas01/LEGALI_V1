@@ -57,6 +57,28 @@
 }
 .btn-logout-text:hover { color: var(--red); }
 
+/* ── Banner upgrade (solo plan gratis) ── */
+.upgrade-banner {
+  display: none;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(200,150,10,0.15), rgba(245,200,66,0.08));
+  border: 1px solid rgba(200,150,10,0.35);
+  border-radius: 10px;
+  text-align: center;
+}
+.upgrade-banner.visible { display: block; }
+.upgrade-banner-text {
+  font-size: 11px; color: #D4A800; line-height: 1.5; margin-bottom: 6px;
+}
+.upgrade-banner-btn {
+  display: inline-block; padding: 5px 14px;
+  background: var(--gold); color: #0A1628;
+  border-radius: 6px; font-size: 11px; font-weight: 700;
+  text-decoration: none; transition: background .2s;
+}
+.upgrade-banner-btn:hover { background: var(--gold-light); }
+
 /* ── Historial de chats ── */
 .history-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -152,9 +174,15 @@
     <a href="planes.html">Actualiza tu plan →</a>
   </div>
 
-  <div class="divider"></div>
+  <!-- Banner upgrade (solo plan gratis) -->
+  <div class="upgrade-banner" id="upgradeBanner">
+    <div class="upgrade-banner-text">
+      ¿Necesitas más consultas?<br/>Pasa a Profesional o Firma.
+    </div>
+    <a href="planes.html" class="upgrade-banner-btn">Ver planes →</a>
+  </div>
 
-  <!-- ── HISTORIAL DE CHATS ── -->
+  <div class="divider"></div>
   <div class="sidebar-section" id="chatHistorySection">
     <div class="history-header">
       <label class="section-label">🗂️ Mis conversaciones</label>
@@ -285,6 +313,11 @@ let CURRENT_PROFILE = null;
   document.getElementById('userPlanLabel').textContent   = PLAN_LABELS[profile.plan] || profile.plan;
 
   renderQuota(profile);
+
+  // Mostrar banner upgrade solo para plan gratis
+  if (profile.plan === 'gratis') {
+    document.getElementById('upgradeBanner')?.classList.add('visible');
+  }
 
   if (profile.plan === 'gratis') {
     const docsArea = document.getElementById('sessionUploadArea');
