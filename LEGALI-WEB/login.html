@@ -528,7 +528,7 @@ async function doForgot() {
 
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Enviando...';
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://cvinculadas01.github.io/LEGALI_V1/login.html',
+    redirectTo: 'https://cvinculadas01.github.io/LEGALI_V1/LEGALI-WEB/login.html',
   });
   btn.disabled = false; btn.innerHTML = 'Enviar enlace';
 
