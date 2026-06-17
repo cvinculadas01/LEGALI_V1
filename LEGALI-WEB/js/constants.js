@@ -127,6 +127,7 @@ const DOC_SIZE_LIMITS = {
 
 // ── Mensajes de error amigables ───────────────────────────────
 const ERROR_MESSAGES = {
+  rate_limited: '⏱️ Demasiadas consultas seguidas. Espera un momento e intenta de nuevo.',
   quota_exhausted:    '⚠️ Has alcanzado el límite de uso de tu plan este mes. <a href="planes.html">Ver planes →</a>',
   account_suspended:  '⛔ Tu cuenta está suspendida. Contacta soporte.',
   profile_not_found:  '❌ Perfil no encontrado. Intenta cerrar sesión y volver a ingresar.',

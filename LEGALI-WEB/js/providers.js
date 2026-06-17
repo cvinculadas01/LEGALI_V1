@@ -59,12 +59,14 @@ async function streamProvider({ messages, provider, model, systemPrompt, onChunk
       } catch (_) {}
 
       const msg = response.status === 402
-        ? ERROR_MESSAGES.quota_exhausted
-        : response.status === 401
-        ? ERROR_MESSAGES.auth_error
-        : response.status === 403
-        ? ERROR_MESSAGES.account_suspended
-        : ERROR_MESSAGES.provider_error;
+  ? ERROR_MESSAGES.quota_exhausted
+  : response.status === 401
+  ? ERROR_MESSAGES.auth_error
+  : response.status === 403
+  ? ERROR_MESSAGES.account_suspended
+  : response.status === 429
+  ? ERROR_MESSAGES.rate_limited
+  : ERROR_MESSAGES.provider_error;
 
       const err = new Error(msg);
       err.status = response.status;
