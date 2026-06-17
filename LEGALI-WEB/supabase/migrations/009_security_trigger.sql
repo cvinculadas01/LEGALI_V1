@@ -36,3 +36,12 @@ CREATE TRIGGER trg_block_plan_tampering
 BEFORE UPDATE ON public.legali_profiles
 FOR EACH ROW
 EXECUTE FUNCTION public.block_plan_tampering();
+
+-- Revocar activate_plan y reset_monthly_quotas de roles públicos
+REVOKE EXECUTE ON FUNCTION public.activate_plan(uuid, text, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.activate_plan(uuid, text, uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.activate_plan(uuid, text, uuid) FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.reset_monthly_quotas() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.reset_monthly_quotas() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.reset_monthly_quotas() FROM authenticated;
