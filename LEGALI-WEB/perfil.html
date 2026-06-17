@@ -87,9 +87,9 @@ html, body { min-height: 100%; font-family: var(--font-body); background: var(--
   background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: var(--primary-light);
 }
 .plan-badge.gratis      { background: rgba(88,103,120,0.15); border-color: #374151; color: #9CA3AF; }
-.plan-badge.consultorio { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #60A5FA; }
-.plan-badge.profesional { background: rgba(200,150,10,0.15); border-color: rgba(200,150,10,0.3); color: var(--gold-light); }
-.plan-badge.firma       { background: rgba(13,158,108,0.15); border-color: rgba(13,158,108,0.3); color: #34D399; }
+.plan-badge.profesional { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #60A5FA; }
+.plan-badge.firma       { background: rgba(200,150,10,0.15); border-color: rgba(200,150,10,0.3); color: var(--gold-light); }
+.plan-badge.admin       { background: rgba(245,200,66,0.15); border-color: rgba(245,200,66,0.3); color: #F5C842; }
 
 /* ── Quota bar ── */
 .quota-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -227,7 +227,7 @@ html, body { min-height: 100%; font-family: var(--font-body); background: var(--
   </div>
 
   <!-- ── Card: Cuota de consultas ────────────────────────── -->
-  <div class="card">
+  <div class="card" id="quotaCard">
     <div class="card-title"><span class="icon">🔢</span> Cuota de consultas</div>
 
     <div class="quota-row">
@@ -239,11 +239,11 @@ html, body { min-height: 100%; font-family: var(--font-body); background: var(--
     </div>
     <div class="quota-info">
       <span id="quotaPct">—</span>
-      <a href="planes.html" style="color: var(--gold-light); text-decoration: none; font-weight:600;">Actualizar plan ↗</a>
+      <a href="planes.html" style="color: var(--gold-light); text-decoration: none; font-weight:600;">Ver planes ↗</a>
     </div>
 
-    <div style="margin-top: 18px;">
-      <a class="btn-gold" href="planes.html">⚡ Ver planes disponibles</a>
+    <div style="margin-top: 18px;" id="upgradeBtn">
+      <a class="btn-gold" href="planes.html">⚡ Mejorar mi plan</a>
     </div>
   </div>
 
@@ -344,9 +344,9 @@ const SUPABASE_URL_P = "https://gunfflxviwauixdymsfk.supabase.co";
 const SUPABASE_KEY_P = "sb_publishable_sHvriOKj2t58aApfn9kCSw_U5gAVn-v";
 const sbProfile = supabase.createClient(SUPABASE_URL_P, SUPABASE_KEY_P);
 
-const PLAN_LABELS   = { gratis: 'Plan Gratis 🆓', consultorio: 'Consultorio ⚖️', profesional: 'Profesional 🏛️', firma: 'Firma / Juzgado 🏢', admin: 'Administrador 🛡️' };
-const PLAN_QUOTAS   = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999, admin: 9999 };
-const PROVIDER_LABELS = { groq: 'Groq — Llama 3.3', openai: 'OpenAI — GPT-4o mini', anthropic: 'Anthropic — Claude' };
+const PLAN_LABELS     = { gratis: 'Plan Gratis 🆓', profesional: 'Profesional ⚖️', firma: 'Firma / Juzgado 🏛️', admin: 'Administrador 🛡️' };
+const PLAN_QUOTAS     = { gratis: 5, profesional: 200, firma: 900, admin: 9999 };
+const PROVIDER_LABELS = { groq: 'Groq — Llama 3.3', anthropic: 'Anthropic — Claude' };
 
 let currentSession = null;
 
@@ -399,18 +399,29 @@ function renderProfile(session, profile) {
   document.getElementById('planExpires').textContent    = profile.plan_expires_at ? formatDate(profile.plan_expires_at) : (profile.plan === 'gratis' ? 'Plan sin vencimiento' : '—');
   document.getElementById('providerAssigned').textContent = PROVIDER_LABELS[profile.provider_assigned] || profile.provider_assigned || '—';
 
-  // Cuota
-  const used        = profile.quota_used  || 0;
-  const total       = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
-  const isUnlimited = total === 9999;
-  const pct         = isUnlimited ? 0 : Math.min(100, Math.round(used / total * 100));
+  // Cuota — solo mostrar barra para plan gratis
+  const used  = profile.quota_used  || 0;
+  const total = profile.quota_total || PLAN_QUOTAS[profile.plan] || 5;
+  const isPaidPlan = ['profesional', 'firma', 'admin'].includes(profile.plan);
 
-  document.getElementById('quotaText').textContent = isUnlimited ? `${used} / ∞` : `${used} / ${total}`;
-  document.getElementById('quotaPct').textContent  = isUnlimited ? 'Sin límite de consultas' : `${pct}% usado`;
+  const quotaCard = document.getElementById('quotaCard');
 
-  const bar = document.getElementById('quotaBar');
-  bar.style.width = (isUnlimited ? 0 : pct) + '%';
-  bar.className   = 'quota-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+  if (isPaidPlan) {
+    // Planes de pago: ocultar barra, mostrar mensaje de plan activo
+    document.getElementById('quotaText').textContent = '—';
+    document.getElementById('quotaPct').textContent  = 'Tu plan no tiene límite visible de consultas';
+    document.getElementById('quotaBar').style.width  = '0%';
+    document.getElementById('upgradeBtn').style.display = 'none';
+  } else {
+    // Plan gratis: mostrar barra normalmente
+    const pct = Math.min(100, Math.round(used / total * 100));
+    document.getElementById('quotaText').textContent = `${used} / ${total}`;
+    document.getElementById('quotaPct').textContent  = `${pct}% usado este mes`;
+    const bar = document.getElementById('quotaBar');
+    bar.style.width = pct + '%';
+    bar.className   = 'quota-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+    document.getElementById('upgradeBtn').style.display = '';
+  }
 }
 
 // ── Cambiar contraseña ────────────────────────────────────────
