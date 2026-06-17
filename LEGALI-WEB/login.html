@@ -220,6 +220,34 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
       <div class="alert alert-error" id="mfaError"></div>
     </div>
 
+    <!-- Panel de nueva contraseña (recovery) -->
+    <div id="recoveryPanel" style="display:none">
+      <div class="brand" style="margin-bottom:20px">
+        <div class="brand-name" style="font-size:22px">🔐 Nueva contraseña</div>
+        <div class="brand-sub">Elige una contraseña segura para tu cuenta</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nueva contraseña</label>
+        <input type="password" id="recoveryNewPass" class="form-input"
+               placeholder="Mínimo 8 caracteres"
+               onkeydown="if(event.key==='Enter') doSetNewPassword()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" id="recoveryConfPass" class="form-input"
+               placeholder="Repite tu contraseña"
+               onkeydown="if(event.key==='Enter') doSetNewPassword()"/>
+      </div>
+      <div id="recoveryAlert" style="
+        display:none; padding:12px 14px; border-radius:8px;
+        font-size:13px; margin-bottom:14px;
+        background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.3); color:#FCA5A5;
+      "></div>
+      <button class="btn-login" id="btnSetNewPass" onclick="doSetNewPassword()">
+        Guardar nueva contraseña
+      </button>
+    </div>
+
     <div class="login-footer">LEGALI &copy; 2025 · Solo para usuarios autorizados</div>
   </div>
 </div>
@@ -232,12 +260,88 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentRole = 'user';
 
-// ── Si ya hay sesión activa → redirigir ──────────────────────
-(async function checkSession() {
+// ── Detectar token de recuperación / confirmación en la URL ──
+(async function handleAuthCallback() {
+  // Supabase envía tokens en el hash: #access_token=...&type=recovery
+  const hash   = window.location.hash;
+  const params = new URLSearchParams(hash.replace('#', ''));
+  const type   = params.get('type');
+  const token  = params.get('access_token');
+
+  if (type === 'recovery' && token) {
+    // Limpiar hash de la URL sin recargar
+    history.replaceState(null, '', window.location.pathname);
+    // Mostrar panel de nueva contraseña
+    _showRecoveryPanel();
+    return;
+  }
+
+  if (type === 'signup' || type === 'magiclink') {
+    // Confirmación de email — Supabase ya autenticó al usuario
+    history.replaceState(null, '', window.location.pathname);
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      redirectByRole(session.user.id);
+    }
+    return;
+  }
+
+  // Flujo normal — verificar sesión existente
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return;
-  redirectByRole(session.user.id);
+  if (session) redirectByRole(session.user.id);
 })();
+
+// ── Panel de nueva contraseña (post-recovery) ─────────────────
+function _showRecoveryPanel() {
+  document.getElementById('mainForm').style.display    = 'none';
+  document.getElementById('forgotPanel').style.display = 'none';
+  const panel = document.getElementById('recoveryPanel');
+  if (panel) panel.style.display = 'block';
+}
+
+async function doSetNewPassword() {
+  const newPwd  = document.getElementById('recoveryNewPass').value.trim();
+  const confPwd = document.getElementById('recoveryConfPass').value.trim();
+  const btn     = document.getElementById('btnSetNewPass');
+  const alert   = document.getElementById('recoveryAlert');
+
+  alert.style.display = 'none';
+
+  if (!newPwd || newPwd.length < 8) {
+    alert.textContent  = 'La contraseña debe tener al menos 8 caracteres.';
+    alert.style.display = 'block';
+    return;
+  }
+  if (newPwd !== confPwd) {
+    alert.textContent  = 'Las contraseñas no coinciden.';
+    alert.style.display = 'block';
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Actualizando...';
+
+  try {
+    const { error } = await sb.auth.updateUser({ password: newPwd });
+    if (error) throw error;
+    await sb.auth.signOut();
+    alert.style.background = 'rgba(13,158,108,0.15)';
+    alert.style.color      = '#6EE7B7';
+    alert.textContent      = '✅ Contraseña actualizada. Inicia sesión con tu nueva contraseña.';
+    alert.style.display    = 'block';
+    setTimeout(() => {
+      document.getElementById('recoveryPanel').style.display = 'none';
+      document.getElementById('mainForm').style.display      = 'block';
+    }, 2500);
+  } catch (e) {
+    alert.textContent  = '❌ ' + (e.message || 'Error al actualizar la contraseña.');
+    alert.style.display = 'block';
+    btn.disabled    = false;
+    btn.textContent = 'Guardar nueva contraseña';
+  }
+}
+
+// ── Si ya hay sesión activa → redirigir ──────────────────────
 
 async function redirectByRole(userId) {
   const { data: profile } = await sb.from('legali_profiles')
@@ -424,7 +528,7 @@ async function doForgot() {
 
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Enviando...';
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/login.html',
+    redirectTo: 'https://cvinculadas01.github.io/LEGALI_V1/login.html',
   });
   btn.disabled = false; btn.innerHTML = 'Enviar enlace';
 
