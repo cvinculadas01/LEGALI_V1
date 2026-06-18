@@ -725,3 +725,73 @@ function _shuffle(arr) {
   }
   return arr;
 }
+
+// ── Timeout de inactividad ────────────────────────────────────
+(function initInactivityTimeout() {
+  const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
+  const WARN_MS    = 25 * 60 * 1000; // aviso a los 25 min
+  let timeoutId, warnId, warnBanner;
+
+  function createBanner() {
+    if (warnBanner) return;
+    warnBanner = document.createElement('div');
+    warnBanner.id = 'inactivity-banner';
+    warnBanner.style.cssText = `
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #1e2d45; border: 1px solid #D97706; border-radius: 10px;
+      padding: 12px 20px; color: #FCD34D; font-size: 13px; z-index: 9999;
+      display: none; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    `;
+    document.body.appendChild(warnBanner);
+  }
+
+  function showWarning(secsLeft) {
+    createBanner();
+    warnBanner.style.display = 'block';
+
+    let s = secsLeft;
+    function updateText() {
+      warnBanner.innerHTML = `⏱️ Tu sesión cerrará en <strong>${s}s</strong> por inactividad.&nbsp;`
+        + `<button onclick="window.resetInactivityTimer()" style="`
+        + `margin-left:8px;background:#D97706;border:none;border-radius:6px;`
+        + `color:#000;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;">`
+        + `Seguir activo</button>`;
+    }
+    updateText();
+
+    const interval = setInterval(() => {
+      if (!warnBanner || warnBanner.style.display === 'none') { clearInterval(interval); return; }
+      s--;
+      if (s <= 0) { clearInterval(interval); return; }
+      updateText();
+    }, 1000);
+  }
+
+  function hideWarning() {
+    if (warnBanner) warnBanner.style.display = 'none';
+  }
+
+  async function forceLogout() {
+    hideWarning();
+    try { await sbUser.auth.signOut(); } catch(_) {}
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'login.html';
+  }
+
+  function resetTimers() {
+    clearTimeout(timeoutId);
+    clearTimeout(warnId);
+    hideWarning();
+    warnId    = setTimeout(() => showWarning(300), WARN_MS);
+    timeoutId = setTimeout(forceLogout, TIMEOUT_MS);
+  }
+
+  window.resetInactivityTimer = resetTimers;
+
+  ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll', 'click'].forEach(ev => {
+    document.addEventListener(ev, resetTimers, { passive: true });
+  });
+
+  resetTimers();
+})();

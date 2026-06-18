@@ -286,7 +286,9 @@ let CURRENT_PROFILE = null;
     .select('*').eq('id', session.user.id).maybeSingle();
 
   if (!profile || !profile.active) {
-    await sbUser.auth.signOut();
+    try { await sbUser.auth.signOut(); } catch(_) {}
+    localStorage.clear();
+    sessionStorage.clear();
     return window.location.href = 'login.html';
   }
 
@@ -365,7 +367,9 @@ function renderQuota(profile) {
 }
 
 async function legaliLogout() {
-  await sbUser.auth.signOut();
+  try { await sbUser.auth.signOut(); } catch(_) {}
+  localStorage.clear();
+  sessionStorage.clear();
   window.location.href = 'login.html';
 }
 

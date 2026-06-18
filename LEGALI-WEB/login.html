@@ -346,7 +346,13 @@ async function doSetNewPassword() {
 async function redirectByRole(userId) {
   const { data: profile } = await sb.from('legali_profiles')
     .select('plan, active').eq('id', userId).maybeSingle();
-  if (!profile || !profile.active) return;
+  if (!profile || !profile.active) {
+    // JWT activo pero sin perfil válido (ej. usuario eliminado) → limpiar todo
+    try { await sb.auth.signOut(); } catch(_) {}
+    localStorage.clear();
+    sessionStorage.clear();
+    return; // se queda en login.html limpio, sin bucle
+  }
   window.location.href = profile.plan === 'admin' ? 'admin/dashboard.html' : 'usuario.html';
 }
 
