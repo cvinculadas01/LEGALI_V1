@@ -83,10 +83,35 @@ function _setupEventListeners() {
   const btnNew = $('btnNewChat');
   if (btnNew) btnNew.addEventListener('click', newConversation);
 
-  // Sidebar toggle (móvil)
+  // Sidebar toggle (móvil) con overlay
   const toggle = $('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = $('sidebarOverlay');
+
+  function openSidebar() {
+    sidebar?.classList.add('open');
+    overlay?.classList.add('active');
+    toggle?.classList.add('hidden');
+  }
+  function closeSidebar() {
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('active');
+    toggle?.classList.remove('hidden');
+  }
+
   if (toggle) toggle.addEventListener('click', () => {
-    document.getElementById('sidebar')?.classList.toggle('open');
+    sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  // Cerrar al tocar el overlay
+  if (overlay) overlay.addEventListener('click', closeSidebar);
+
+  // Cerrar sidebar al seleccionar una conversación en móvil
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && sidebar?.classList.contains('open')) {
+      const convItem = e.target.closest('.conv-item');
+      if (convItem) closeSidebar();
+    }
   });
 }
 

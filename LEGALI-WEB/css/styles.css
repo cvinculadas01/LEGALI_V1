@@ -659,9 +659,20 @@ input, textarea { font-family: var(--font-body); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+/* ── Overlay sidebar (móvil) ───────────────────────────────── */
+#sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 150;
+  backdrop-filter: blur(2px);
+}
+#sidebarOverlay.active { display: block; }
+
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  :root { --sidebar-w: 260px; }
+  :root { --sidebar-w: 280px; }
 
   #sidebar {
     transform: translateX(-100%);
@@ -671,17 +682,52 @@ input, textarea { font-family: var(--font-body); }
 
   #main { margin-left: 0; }
 
-  .sidebar-toggle { display: flex; align-items: center; justify-content: center; }
+  /* Hamburguesa: se oculta cuando sidebar está abierto */
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 250;
+  }
+  .sidebar-toggle.hidden { opacity: 0; pointer-events: none; }
 
   .chat-history { padding: 16px; }
-  .input-area   { padding: 12px 16px 16px; }
+
+  /* Input: padding extra para que el teclado virtual no lo tape */
+  .input-area {
+    padding: 10px 12px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  /* Botones de acción: siempre visibles en táctil (no depende del hover) */
+  .message-actions { opacity: 1; }
+  .msg-action-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  /* Barra de cuota: texto compacto */
+  .quota-label { font-size: 10px; }
+  .quota-count { font-size: 11px; }
+  .quota-plan  { font-size: 10px; }
 
   .welcome h1 { font-size: 28px; }
   .suggestion-chip { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
-  .welcome { padding: 24px 16px; }
-  .welcome h1 { font-size: 24px; }
+  .welcome { padding: 24px 12px; }
+  .welcome h1 { font-size: 22px; }
   .message-user .message-bubble { max-width: 100%; }
+
+  /* Input area: más espacio vertical en pantallas muy pequeñas */
+  .input-area {
+    padding: 8px 10px 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  /* Chips de sugerencia: fuente más pequeña */
+  .suggestion-chip { font-size: 12px; padding: 8px 12px; }
 }
