@@ -596,7 +596,6 @@ async function exportWord() {
     return;
   }
 
-  // Esperar a que la librería cargue (se carga asíncrono desde CDN)
   if (window._docxReady) await window._docxReady;
 
   if (typeof docx === 'undefined') {
@@ -604,8 +603,174 @@ async function exportWord() {
     return;
   }
 
-  const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType } = docx;
+  const {
+    Document, Paragraph, TextRun, HeadingLevel, Packer,
+    AlignmentType, Table, TableRow, TableCell, WidthType,
+    BorderStyle, ShadingType,
+  } = docx;
 
+  // ── Parser de inline markdown → array de TextRun ──────────
+  function _inlineRuns(text, baseSize) {
+    const sz = baseSize || 22;
+    const runs = [];
+    // Soporta: **bold**, *italic*, ***bold+italic***, `code`
+    const re = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+    let last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) runs.push(new TextRun({ text: text.slice(last, m.index), size: sz }));
+      if (m[2])      runs.push(new TextRun({ text: m[2], bold: true, italics: true, size: sz }));
+      else if (m[3]) runs.push(new TextRun({ text: m[3], bold: true, size: sz }));
+      else if (m[4]) runs.push(new TextRun({ text: m[4], italics: true, size: sz }));
+      else if (m[5]) runs.push(new TextRun({ text: m[5], font: 'Courier New', size: sz }));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) runs.push(new TextRun({ text: text.slice(last), size: sz }));
+    return runs.length ? runs : [new TextRun({ text, size: sz })];
+  }
+
+  // ── Parser de bloque markdown → array de Paragraph/Table ──
+  function _mdToDocx(markdown) {
+    const elements = [];
+    const lines = markdown.split('\n');
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Línea vacía
+      if (!line.trim()) {
+        elements.push(new Paragraph({ text: '' }));
+        i++; continue;
+      }
+
+      // Headings # ## ###
+      const hMatch = line.match(/^(#{1,6})\s+(.+)/);
+      if (hMatch) {
+        const lvlMap = {
+          1: HeadingLevel.HEADING_1,
+          2: HeadingLevel.HEADING_2,
+          3: HeadingLevel.HEADING_3,
+          4: HeadingLevel.HEADING_4,
+          5: HeadingLevel.HEADING_5,
+          6: HeadingLevel.HEADING_6,
+        };
+        const lvl   = hMatch[1].length;
+        const hText = hMatch[2].replace(/\*\*/g, '');
+        elements.push(new Paragraph({ text: hText, heading: lvlMap[lvl] || HeadingLevel.HEADING_3 }));
+        i++; continue;
+      }
+
+      // Separador ---
+      if (line.match(/^---+\s*$/) || line.match(/^\*\*\*+\s*$/)) {
+        elements.push(new Paragraph({
+          children: [new TextRun({ text: '─'.repeat(60), color: 'CCCCCC', size: 16 })],
+        }));
+        i++; continue;
+      }
+
+      // Tabla markdown |col|col|
+      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        const tableLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        // Filtrar la fila separadora |---|---|
+        const dataRows = tableLines.filter(l => !l.match(/^\s*\|[\s\-:|]+\|\s*$/));
+        if (dataRows.length >= 1) {
+          const parseCells = row => row.split('|').slice(1, -1).map(c => c.trim());
+          const headerCells = parseCells(dataRows[0]);
+          const colCount    = headerCells.length;
+          const colWidth    = Math.floor(9000 / colCount);
+
+          const tableRows = dataRows.map((row, rowIdx) => {
+            const cells = parseCells(row);
+            return new TableRow({
+              children: cells.map(cellText => new TableCell({
+                width: { size: colWidth, type: WidthType.DXA },
+                shading: rowIdx === 0
+                  ? { fill: '1B4FD8', type: ShadingType.CLEAR, color: 'FFFFFF' }
+                  : { fill: 'F8FAFF', type: ShadingType.CLEAR },
+                children: [new Paragraph({
+                  children: _inlineRuns(cellText, 20),
+                  ...(rowIdx === 0 ? {} : {}),
+                })],
+              })),
+            });
+          });
+
+          elements.push(new Table({
+            width: { size: 9000, type: WidthType.DXA },
+            rows: tableRows,
+          }));
+          elements.push(new Paragraph({ text: '' }));
+        }
+        continue;
+      }
+
+      // Lista con viñeta - item o * item
+      if (line.match(/^(\s*)[-*]\s+(.+)/)) {
+        const listMatch = line.match(/^(\s*)[-*]\s+(.+)/);
+        const indent    = listMatch[1].length > 0;
+        elements.push(new Paragraph({
+          children: [
+            new TextRun({ text: indent ? '    • ' : '• ', bold: false, size: 22 }),
+            ..._inlineRuns(listMatch[2], 22),
+          ],
+        }));
+        i++; continue;
+      }
+
+      // Lista numerada  1. item
+      if (line.match(/^\d+\.\s+(.+)/)) {
+        const numMatch = line.match(/^(\d+)\.\s+(.+)/);
+        elements.push(new Paragraph({
+          children: [
+            new TextRun({ text: `${numMatch[1]}. `, bold: true, size: 22 }),
+            ..._inlineRuns(numMatch[2], 22),
+          ],
+        }));
+        i++; continue;
+      }
+
+      // Bloque de código ```
+      if (line.trim().startsWith('```')) {
+        i++;
+        const codeLines = [];
+        while (i < lines.length && !lines[i].trim().startsWith('```')) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        i++; // saltar cierre ```
+        for (const cl of codeLines) {
+          elements.push(new Paragraph({
+            children: [new TextRun({ text: cl, font: 'Courier New', size: 18, color: '444444' })],
+          }));
+        }
+        continue;
+      }
+
+      // Blockquote > texto
+      if (line.match(/^>\s*(.*)/)) {
+        const bqText = line.match(/^>\s*(.*)/)[1];
+        elements.push(new Paragraph({
+          children: [
+            new TextRun({ text: '  │  ', color: 'AAAAAA', size: 22 }),
+            ..._inlineRuns(bqText, 22),
+          ],
+        }));
+        i++; continue;
+      }
+
+      // Párrafo normal
+      elements.push(new Paragraph({ children: _inlineRuns(line, 22) }));
+      i++;
+    }
+
+    return elements;
+  }
+
+  // ── Construir documento ────────────────────────────────────
   const children = [
     new Paragraph({
       text: '⚖️ LEGALI — Consulta Jurídica',
@@ -615,7 +780,7 @@ async function exportWord() {
       children: [
         new TextRun({ text: `Fecha: ${new Date().toLocaleString('es-CO')}  |  `, size: 20, color: '666666' }),
         new TextRun({ text: `Usuario: ${window.LEGALI_USER?.email || '—'}  |  `, size: 20, color: '666666' }),
-        new TextRun({ text: `Plan: ${PLAN_CONFIG[window.LEGALI_USER?.plan]?.label || '—'}`, size: 20, color: '666666' }),
+        new TextRun({ text: `Plan: ${PLAN_CONFIG?.[window.LEGALI_USER?.plan]?.label || '—'}`, size: 20, color: '666666' }),
       ],
     }),
     new Paragraph({ text: '' }),
@@ -628,15 +793,22 @@ async function exportWord() {
         children: [new TextRun({
           text: isUser ? '👤 USUARIO' : '⚖️ LEGALI',
           bold: true,
-          size: 20,
+          size: 22,
           color: isUser ? '1B4FD8' : 'C8960A',
         })],
       }),
-      new Paragraph({
-        children: [new TextRun({ text: msg.content, size: 22 })],
-      }),
-      new Paragraph({ text: '' }),
     );
+
+    if (isUser) {
+      // Pregunta del usuario: párrafo simple con inline markdown
+      children.push(new Paragraph({ children: _inlineRuns(msg.content, 22) }));
+    } else {
+      // Respuesta de LEGALI: parseo completo de markdown
+      const parsed = _mdToDocx(msg.content);
+      children.push(...parsed);
+    }
+
+    children.push(new Paragraph({ text: '' }));
   }
 
   children.push(
