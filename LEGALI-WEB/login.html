@@ -256,44 +256,37 @@ html, body { height: 100%; font-family: var(--font-body); background: var(--side
 // ── Supabase init ─────────────────────────────────────────────
 const SUPABASE_URL = "https://gunfflxviwauixdymsfk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sHvriOKj2t58aApfn9kCSw_U5gAVn-v";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    flowType: 'implicit',
+    detectSessionInUrl: true,
+  }
+});
 
 let currentRole = 'user';
 
 // ── Detectar token de recuperación / confirmación en la URL ──
+// Supabase con flowType:'implicit' procesa el hash automáticamente.
+// onAuthStateChange captura PASSWORD_RECOVERY antes de que el usuario haga nada.
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    history.replaceState(null, '', window.location.pathname);
+    _showRecoveryPanel();
+  } else if (event === 'SIGNED_IN' && window.location.hash.includes('type=signup')) {
+    history.replaceState(null, '', window.location.pathname);
+    if (session) redirectByRole(session.user.id);
+  }
+});
+
 (async function handleAuthCallback() {
-  // Supabase envía tokens en el hash: #access_token=...&type=recovery
+  // Flujo normal — verificar sesión existente (no recovery)
   const hash   = window.location.hash;
   const params = new URLSearchParams(hash.replace('#', ''));
   const type   = params.get('type');
-  const token  = params.get('access_token');
 
-  if (type === 'recovery' && token) {
-    // ✅ Establecer sesión con el token ANTES de limpiar el hash
-    const { error } = await sb.auth.setSession({
-      access_token:  token,
-      refresh_token: params.get('refresh_token') || '',
-    });
-    // Limpiar hash de la URL sin recargar
-    history.replaceState(null, '', window.location.pathname);
-    if (error) {
-      console.error('[LEGALI] Error al establecer sesión de recovery:', error.message);
-    }
-    _showRecoveryPanel();
-    return;
-  }
+  // Recovery y signup los maneja onAuthStateChange — aquí solo flujo normal
+  if (type === 'recovery' || type === 'signup' || type === 'magiclink') return;
 
-  if (type === 'signup' || type === 'magiclink') {
-    // Confirmación de email — Supabase ya autenticó al usuario
-    history.replaceState(null, '', window.location.pathname);
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      redirectByRole(session.user.id);
-    }
-    return;
-  }
-
-  // Flujo normal — verificar sesión existente
   const { data: { session } } = await sb.auth.getSession();
   if (session) redirectByRole(session.user.id);
 })();
