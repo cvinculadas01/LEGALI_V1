@@ -626,27 +626,32 @@ select.form-input { font-family: var(--font-body); }
       <div class="page-header">
         <div>
           <div class="page-title">📋 Logs de uso</div>
-          <div class="page-sub">Registro de consultas y actividad del sistema</div>
+          <div class="page-sub">Registro de consultas de IA realizadas por los usuarios</div>
         </div>
         <div class="page-actions">
           <button class="btn btn-outline btn-sm" onclick="loadLogs()">↻ Actualizar</button>
         </div>
       </div>
 
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">
+        Muestra las últimas 100 consultas registradas en <code>audit_logs</code>.
+        Útil para monitorear uso, detectar abusos y auditar consumo de APIs por proveedor y plan.
+      </p>
+
       <div class="table-card">
         <div class="table-header">
           <div class="table-title">Últimas consultas</div>
-          <input class="table-search" id="logSearch" placeholder="🔍 Buscar usuario o proveedor..." oninput="filterLogs()"/>
+          <input class="table-search" id="logSearch" placeholder="🔍 Buscar proveedor, modelo o sesión..." oninput="filterLogs()"/>
         </div>
         <table class="data-table">
           <thead>
             <tr>
               <th>Fecha</th>
-              <th>Usuario</th>
+              <th>Sesión</th>
               <th>Proveedor</th>
               <th>Modelo</th>
-              <th>Tokens aprox.</th>
-              <th>Consulta (resumen)</th>
+              <th>Tokens in</th>
+              <th>Plan</th>
             </tr>
           </thead>
           <tbody id="logsTable">
@@ -1126,9 +1131,9 @@ async function loadBilling() {
 let allLogs = [];
 
 async function loadLogs() {
-  const { data } = await sb.from('conversations')
-    .select('created_at, session_id, provider, model, content, role')
-    .eq('role', 'user')
+  const { data } = await sb.from('audit_logs')
+    .select('created_at, session_id, provider, model, tokens_in, meta')
+    .eq('action', 'query')
     .order('created_at', { ascending: false })
     .limit(100);
   allLogs = data || [];
@@ -1137,22 +1142,22 @@ async function loadLogs() {
 
 function renderLogs(logs) {
   const tbody = document.getElementById('logsTable');
-  if (!logs.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Sin logs</td></tr>'; return; }
+  if (!logs.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Sin logs registrados</td></tr>'; return; }
   tbody.innerHTML = logs.map(l => `
     <tr>
       <td>${fmtDateTime(l.created_at)}</td>
-      <td><span style="font-family:var(--font-mono);font-size:11px">${l.session_id?.slice(0, 8)}...</span></td>
+      <td><span style="font-family:var(--font-mono);font-size:11px">${l.session_id?.slice(0, 8) || '—'}...</span></td>
       <td><span class="badge badge-blue">${l.provider || '—'}</span></td>
       <td style="font-size:11px">${l.model || '—'}</td>
-      <td>${Math.round((l.content?.length || 0) / 4)}</td>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.content?.slice(0, 80) || '—'}</td>
+      <td>${l.tokens_in || 0}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${l.meta?.plan || '—'}</td>
     </tr>
   `).join('');
 }
 
 function filterLogs() {
   const q = document.getElementById('logSearch').value.toLowerCase();
-  renderLogs(allLogs.filter(l => (l.provider + l.model + l.session_id).toLowerCase().includes(q)));
+  renderLogs(allLogs.filter(l => (l.provider + l.model + l.session_id + (l.meta?.plan || '')).toLowerCase().includes(q)));
 }
 
 // ── PDF extract (reutilizado del app.js) ─────────────────────
