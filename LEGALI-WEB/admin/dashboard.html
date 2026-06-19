@@ -571,6 +571,11 @@ select.form-input { font-family: var(--font-body); }
         </div>
       </div>
 
+      <div class="alert-banner info" style="margin-bottom:20px">
+        ℹ️ Los pagos aparecen aquí automáticamente cuando los webhooks de Wompi y MercadoPago
+        estén configurados. Pendiente de infraestructura — Fase 6 del plan de despliegue.
+      </div>
+
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="metric-label">Ingresos mes actual</div>
@@ -1110,7 +1115,7 @@ async function loadBilling() {
       <td>${fmtDate(p.created_at)}</td>
       <td>${p.legali_profiles?.email || '—'}</td>
       <td>${planBadge(p.plan)}</td>
-      <td><strong>$${p.amount} USD</strong></td>
+      <td><strong>$${p.amount_usd ?? (p.amount_cop ? p.amount_cop.toLocaleString('es-CO') + ' COP' : '—')}</strong></td>
       <td>${p.status === 'approved' ? '<span class="badge badge-green">Aprobado</span>' : '<span class="badge badge-red">'+p.status+'</span>'}</td>
       <td><span style="font-family:var(--font-mono);font-size:11px">${p.reference || '—'}</span></td>
     </tr>
