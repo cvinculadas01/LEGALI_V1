@@ -441,7 +441,7 @@ async function _handleFiles(files) {
 
   const maxBytes = DOC_SIZE_LIMITS[user.plan] || 0;
   if (maxBytes === 0) {
-    alert('Los documentos de sesión están disponibles desde el plan Consultorio.');
+    alert('Los documentos de sesión están disponibles desde el plan Profesional.');
     return;
   }
 
@@ -969,7 +969,7 @@ function _shuffle(arr) {
 
   async function forceLogout() {
     hideWarning();
-    try { await sbUser.auth.signOut(); } catch(_) {}
+    try { await supabaseClient.auth.signOut(); } catch(_) {}
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = 'login.html';

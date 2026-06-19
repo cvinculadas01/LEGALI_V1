@@ -13,6 +13,20 @@ const ALLOWED_ORIGINS = [
   "https://cvinculadas01.github.io",
 ];
 
+// ── Precios autoritativos (server-side) ────────────────────────
+// BUG CRÍTICO corregido: el monto a cobrar NUNCA debe tomarse del
+// body enviado por el cliente sin validar. Antes, `amount_usd`
+// llegaba del frontend (js/payments.js → PRICING) y se usaba
+// directamente para crear la preferencia en MercadoPago — un
+// usuario podía interceptar la petición y pagar, por ejemplo,
+// $1 USD por el plan Firma ($135 USD reales).
+//
+// Debe mantenerse sincronizado con PRICING en js/payments.js.
+const PRICING: Record<string, number> = {
+  profesional: 25,
+  firma:       135,
+};
+
 function corsHeaders(origin: string | null) {
   const allow = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
@@ -69,15 +83,35 @@ serve(async (req: Request) => {
     return _error(CORS, 400, "invalid_body", "Faltan campos requeridos");
   }
 
+  // ── Validar que el plan exista y que el monto coincida con el precio real ──
+  // El amount_usd del body NUNCA se usa directamente: se recalcula aquí.
+  const realAmount = PRICING[plan];
+  if (!realAmount) {
+    return _error(CORS, 400, "invalid_plan", "Plan no válido");
+  }
+  if (Number(amount_usd) !== realAmount) {
+    console.warn(
+      `Monto manipulado: usuario ${user.id} envió amount_usd=${amount_usd} ` +
+      `para plan '${plan}' (precio real: ${realAmount})`
+    );
+    return _error(CORS, 400, "amount_mismatch", "El monto no coincide con el precio del plan");
+  }
+
   // Verificar que el pago pertenezca al usuario autenticado
   const { data: payment, error: payErr } = await sbAdmin
     .from("legali_payments")
-    .select("id, user_id, plan, status")
+    .select("id, user_id, plan, status, amount_usd")
     .eq("id", payment_id)
     .maybeSingle();
 
   if (payErr || !payment || payment.user_id !== user.id) {
     return _error(CORS, 403, "forbidden", "Pago no encontrado o no autorizado");
+  }
+
+  // Doble verificación: el monto también debe coincidir con el registrado
+  // al crear la intención de pago (legali_payments.amount_usd).
+  if (Number(payment.amount_usd) !== realAmount || payment.plan !== plan) {
+    return _error(CORS, 400, "amount_mismatch", "El pago registrado no coincide con el plan/monto solicitado");
   }
 
   // ── 3. Crear preferencia en MercadoPago ─────────────────────
@@ -94,7 +128,7 @@ serve(async (req: Request) => {
       {
         title: `LEGALI - Plan ${plan} (${period === "annual" ? "anual" : "mensual"})`,
         quantity: 1,
-        unit_price: Number(amount_usd),
+        unit_price: realAmount,
         currency_id: "USD",
       },
     ],

@@ -1,13 +1,19 @@
 -- ============================================================
--- LEGALI v3.1 — schema.sql
+-- LEGALI v3.2 — schema.sql
 -- PostgreSQL / Supabase
--- Estado: sincronizado con migración 008 + correcciones v3.1
+-- Estado: sincronizado con migración 009 + correcciones v3.2
 --   - Eliminado plan 'consultorio' y provider 'openai'
 --   - firma quota_total: 900 (no 9999)
 --   - pgvector añadido en extensiones
 --   - handle_new_user y activate_plan alineados con v3.0
 --   - legali_config sin referencias a openai_model
 --   - anthropic_model actualizado a claude-sonnet-4-6
+--   - v3.2: search_legal_docs sincronizada con migración 007
+--           (incluye p_user_id; antes rompía el RAG en instalaciones
+--           nuevas hechas directamente desde este archivo)
+--   - v3.2: agregada política INSERT para legali_payments
+--           (antes el flujo de pago fallaba por RLS para usuarios
+--           no-admin — ver migración 010)
 -- ============================================================
 
 -- ─────────────────────────────────────────────
@@ -160,6 +166,7 @@ create index if not exists idx_legal_memory_search      on public.legal_memory  
 create index if not exists idx_conversations_user       on public.conversations(user_id);
 create index if not exists idx_conversations_session    on public.conversations(session_id);
 create index if not exists idx_session_docs_session     on public.session_documents(session_id);
+create index if not exists idx_session_docs_user_id      on public.session_documents(user_id);
 create index if not exists idx_audit_logs_user          on public.audit_logs(user_id);
 create index if not exists idx_audit_logs_created       on public.audit_logs(created_at desc);
 create index if not exists idx_payments_user            on public.legali_payments(user_id);
@@ -228,10 +235,16 @@ create trigger trg_config_updated_at    before update on public.legali_config   
 -- ─────────────────────────────────────────────
 
 -- 7.1 Buscar documentos RAG
+-- NOTA v3.2: firma sincronizada con migración 007_rag_by_user_id.sql
+-- (agrega p_user_id para que session_documents persista por usuario,
+-- no solo por session_id). searchDocs() en js/supabase.js SIEMPRE
+-- envía p_user_id; si esta función no lo declara, la llamada falla
+-- por firma inexistente y el RAG queda completamente roto.
 create or replace function public.search_legal_docs(
   query_text   text,
   p_session_id text default null,
-  max_results  integer default 5
+  max_results  integer default 5,
+  p_user_id    uuid default null
 )
 returns table (
   id         uuid,
@@ -271,8 +284,12 @@ language sql stable security definer set search_path = public as $$
          immutable_unaccent(trim(query_text)),
          '\s+', ':* & ', 'g'
        ) || ':*') as query
-  where (p_session_id is null or sd.session_id = p_session_id)
-    and sd.search_vec @@ query
+  where sd.search_vec @@ query
+    and (
+      (p_user_id is not null and sd.user_id = p_user_id)
+      or
+      (p_user_id is null and (p_session_id is null or sd.session_id = p_session_id))
+    )
 
   order by rank desc
   limit max_results;
@@ -426,6 +443,7 @@ create policy "admin_all_memory"         on public.legal_memory for all    using
 
 -- legali_payments
 create policy "user_own_payments"        on public.legali_payments for select using (user_id = auth.uid());
+create policy "user_insert_own_payment"  on public.legali_payments for insert with check (user_id = auth.uid() and status = 'pending');
 create policy "admin_all_payments"       on public.legali_payments for all    using (public.is_admin());
 
 -- audit_logs
