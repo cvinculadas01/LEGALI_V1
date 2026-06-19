@@ -293,7 +293,10 @@ let CURRENT_PROFILE = null;
     return window.location.href = 'login.html';
   }
 
-  if (profile.plan === 'admin') {
+  const __params = new URLSearchParams(window.location.search);
+  const __adminOverride = __params.get('admin') === '1';
+
+  if (profile.plan === 'admin' && !__adminOverride) {
     return window.location.href = 'admin/dashboard.html';
   }
 
