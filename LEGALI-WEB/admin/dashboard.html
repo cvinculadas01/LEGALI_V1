@@ -688,9 +688,8 @@ select.form-input { font-family: var(--font-body); }
       <label class="form-label">Plan</label>
       <select id="modalUserPlan" class="form-input">
         <option value="gratis">Gratis</option>
-        <option value="consultorio">Consultorio ($9/mes)</option>
         <option value="profesional">Profesional ($25/mes)</option>
-        <option value="firma">Firma / Juzgado ($79/mes)</option>
+        <option value="firma">Firma / Juzgado ($135/mes)</option>
       </select>
     </div>
     <div class="form-group">
@@ -790,7 +789,7 @@ async function loadDashboard() {
       .join('');
 
     // Estimación de ingresos
-    const prices = { gratis: 0, consultorio: 9, profesional: 25, firma: 79 };
+    const prices = { gratis: 0, profesional: 25, firma: 135 };
     let revenue = 0;
     planData?.forEach(u => { revenue += prices[u.plan] || 0; });
     document.getElementById('m-revenue').textContent = '$' + revenue;
@@ -929,14 +928,14 @@ async function saveUser() {
   const plan = document.getElementById('modalUserPlan').value;
   const active = document.getElementById('modalUserActive').value === 'true';
   const nota = document.getElementById('modalUserNote').value;
-  const PLAN_QUOTAS = { gratis: 5, consultorio: 50, profesional: 200, firma: 9999 };
-  const PLAN_PROVIDERS = { gratis: 'groq', consultorio: 'openai', profesional: 'anthropic', firma: 'anthropic' };
-  const PLAN_LABELS = { gratis: 'Gratis', consultorio: 'Consultorio', profesional: 'Profesional', firma: 'Firma / Juzgado' };
+  const PLAN_QUOTAS    = { gratis: 5, profesional: 200, firma: 900 };
+  const PLAN_PROVIDERS = { gratis: 'groq', profesional: 'anthropic', firma: 'anthropic' };
+  const PLAN_LABELS    = { gratis: 'Gratis', profesional: 'Profesional', firma: 'Firma / Juzgado' };
 
   const { error } = await sb.from('legali_profiles').update({
     nombre: nameParts[0] || '',
     apellido: nameParts.slice(1).join(' ') || '',
-    plan, active, nota,
+    plan, active,
     plan_label: PLAN_LABELS[plan],
     provider_assigned: PLAN_PROVIDERS[plan],
     quota_total: PLAN_QUOTAS[plan],
@@ -1096,10 +1095,9 @@ async function saveProviderConfig(provider) {
 
 async function saveQuotaConfig() {
   const quotas = {
-    gratis: parseInt(document.getElementById('cfg-quota-gratis').value) || 5,
-    consultorio: parseInt(document.getElementById('cfg-quota-cons').value) || 50,
-    profesional: parseInt(document.getElementById('cfg-quota-pro').value) || 200,
-    firma: parseInt(document.getElementById('cfg-quota-firma').value) || 0,
+    gratis:      parseInt(document.getElementById('cfg-quota-gratis').value) || 5,
+    profesional: parseInt(document.getElementById('cfg-quota-pro').value)   || 200,
+    firma:       parseInt(document.getElementById('cfg-quota-firma').value)  || 900,
   };
   const { error } = await sb.from('legali_config').upsert({ key: 'plan_quotas', value: JSON.stringify(quotas) }, { onConflict: 'key' });
   const alertEl = document.getElementById('configAlert');
@@ -1113,7 +1111,7 @@ async function saveQuotaConfig() {
 async function loadBilling() {
   const { data: subs } = await sb.from('legali_profiles')
     .select('plan, created_at').neq('plan', 'gratis').neq('plan', 'admin');
-  const prices = { consultorio: 9, profesional: 25, firma: 79 };
+  const prices = { profesional: 25, firma: 135 };
   let revenue = 0;
   (subs || []).forEach(s => revenue += prices[s.plan] || 0);
   document.getElementById('b-revenue').textContent = '$' + revenue;
@@ -1212,7 +1210,7 @@ function userRow(u) {
 }
 
 function planBadge(plan) {
-  const map = { gratis: 'badge-gray', consultorio: 'badge-blue', profesional: 'badge-gold', firma: 'badge-green', admin: 'badge-red' };
+  const map = { gratis: 'badge-gray', profesional: 'badge-gold', firma: 'badge-green', admin: 'badge-red' };
   return `<span class="badge ${map[plan] || 'badge-gray'}">${plan || '—'}</span>`;
 }
 
