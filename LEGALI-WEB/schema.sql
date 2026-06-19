@@ -1,6 +1,13 @@
 -- ============================================================
--- LEGALI v2.0 — schema.sql
+-- LEGALI v3.1 — schema.sql
 -- PostgreSQL / Supabase
+-- Estado: sincronizado con migración 008 + correcciones v3.1
+--   - Eliminado plan 'consultorio' y provider 'openai'
+--   - firma quota_total: 900 (no 9999)
+--   - pgvector añadido en extensiones
+--   - handle_new_user y activate_plan alineados con v3.0
+--   - legali_config sin referencias a openai_model
+--   - anthropic_model actualizado a claude-sonnet-4-6
 -- ============================================================
 
 -- ─────────────────────────────────────────────
@@ -10,6 +17,7 @@ create extension if not exists "uuid-ossp";
 create extension if not exists "pg_trgm";
 create extension if not exists "unaccent";
 create extension if not exists "pg_cron";
+create extension if not exists "vector";          -- pgvector: requerido para RAG
 
 -- ─────────────────────────────────────────────
 -- SECCIÓN 2: FUNCIÓN INMUTABLE PARA ÍNDICE GIN
@@ -29,9 +37,9 @@ create table if not exists public.legali_profiles (
   apellido          text,
   email             text,
   plan              text not null default 'gratis'
-                    check (plan in ('gratis','consultorio','profesional','firma','admin')),
+                    check (plan in ('gratis','profesional','firma','admin')),
   provider_assigned text not null default 'groq'
-                    check (provider_assigned in ('groq','openai','anthropic')),
+                    check (provider_assigned in ('groq','anthropic')),
   quota_used        integer not null default 0,
   quota_total       integer not null default 5,
   active            boolean not null default true,
@@ -133,20 +141,20 @@ create table if not exists public.legali_config (
 );
 
 insert into public.legali_config (key, value, description) values
-  ('default_provider',    'groq',                   'Proveedor IA por defecto para plan gratis'),
-  ('groq_model',          'llama-3.3-70b-versatile', 'Modelo Groq'),
-  ('openai_model',        'gpt-4o-mini',             'Modelo OpenAI'),
-  ('anthropic_model',     'claude-sonnet-4-20250514','Modelo Anthropic estándar'),
-  ('anthropic_model_pro', 'claude-opus-4-6',         'Modelo Anthropic premium'),
-  ('rag_max_results',     '5',                       'Fragmentos RAG máximos por consulta'),
-  ('rag_max_chars',       '4000',                    'Caracteres máximos inyectados en prompt'),
-  ('maintenance_mode',    'false',                   'Modo mantenimiento')
+  ('default_provider',       'groq',                    'Proveedor IA por defecto para plan gratis'),
+  ('groq_model',             'llama-3.3-70b-versatile', 'Modelo Groq para plan gratis'),
+  ('anthropic_model',        'claude-sonnet-4-6',        'Modelo Anthropic para plan Profesional'),
+  ('anthropic_model_pro',    'claude-opus-4-6',          'Modelo Anthropic para plan Firma'),
+  ('firma_quota_internal',   '900',                     'Cuota real interna plan Firma — no exponer al usuario'),
+  ('rag_max_results',        '5',                       'Fragmentos RAG máximos por consulta'),
+  ('rag_max_chars',          '4000',                    'Caracteres máximos inyectados en prompt'),
+  ('maintenance_mode',       'false',                   'Modo mantenimiento')
 on conflict (key) do nothing;
 
 -- ─────────────────────────────────────────────
 -- SECCIÓN 4: ÍNDICES
 -- ─────────────────────────────────────────────
-create index if not exists idx_legal_documents_search  on public.legal_documents  using gin(search_vec);
+create index if not exists idx_legal_documents_search   on public.legal_documents  using gin(search_vec);
 create index if not exists idx_session_documents_search on public.session_documents using gin(search_vec);
 create index if not exists idx_legal_memory_search      on public.legal_memory      using gin(search_vec);
 create index if not exists idx_conversations_user       on public.conversations(user_id);
@@ -162,14 +170,13 @@ create index if not exists idx_payments_user            on public.legali_payment
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
-  _plan  text := coalesce(new.raw_user_meta_data->>'plan', 'gratis');
+  _plan  text    := coalesce(new.raw_user_meta_data->>'plan', 'gratis');
   _quota integer;
 begin
   _quota := case _plan
-    when 'consultorio'  then 50
-    when 'profesional'  then 200
-    when 'firma'        then 9999
-    when 'admin'        then 9999
+    when 'profesional' then 200
+    when 'firma'       then 900
+    when 'admin'       then 9999
     else 5
   end;
 
@@ -186,12 +193,9 @@ begin
       when 'profesional' then 'anthropic'
       when 'firma'       then 'anthropic'
       when 'admin'       then 'anthropic'
-      when 'consultorio' then 'openai'
       else 'groq'
     end,
-    0,
-    _quota,
-    true
+    0, _quota, true
   )
   on conflict (id) do nothing;
   return new;
@@ -225,9 +229,9 @@ create trigger trg_config_updated_at    before update on public.legali_config   
 
 -- 7.1 Buscar documentos RAG
 create or replace function public.search_legal_docs(
-  query_text  text,
+  query_text   text,
   p_session_id text default null,
-  max_results integer default 5
+  max_results  integer default 5
 )
 returns table (
   id         uuid,
@@ -295,19 +299,19 @@ begin
 
   if rec.quota_total <> 9999 and rec.quota_used >= rec.quota_total then
     return jsonb_build_object(
-      'allowed',   false,
-      'reason',    'quota_exhausted',
-      'used',      rec.quota_used,
-      'total',     rec.quota_total
+      'allowed', false,
+      'reason',  'quota_exhausted',
+      'used',    rec.quota_used,
+      'total',   rec.quota_total
     );
   end if;
 
   return jsonb_build_object(
-    'allowed',   true,
-    'plan',      rec.plan,
-    'provider',  rec.provider_assigned,
-    'used',      rec.quota_used,
-    'total',     rec.quota_total
+    'allowed',  true,
+    'plan',     rec.plan,
+    'provider', rec.provider_assigned,
+    'used',     rec.quota_used,
+    'total',    rec.quota_total
   );
 end;
 $$;
@@ -330,15 +334,15 @@ begin
   update public.legali_profiles
   set quota_used = 0,
       updated_at = now()
-  where active = true;
+  where active = true and plan != 'admin';
 end;
 $$;
 
 -- 7.5 Activar plan tras pago
 create or replace function public.activate_plan(
-  p_user_id     uuid,
-  p_plan        text,
-  p_payment_id  uuid default null
+  p_user_id    uuid,
+  p_plan       text,
+  p_payment_id uuid default null
 )
 returns void language plpgsql security definer set search_path = public as $$
 declare
@@ -346,16 +350,16 @@ declare
   _provider text;
 begin
   _quota := case p_plan
-    when 'consultorio' then 50
     when 'profesional' then 200
-    when 'firma'       then 9999
+    when 'firma'       then 900
+    when 'admin'       then 9999
     else 5
   end;
 
   _provider := case p_plan
     when 'profesional' then 'anthropic'
     when 'firma'       then 'anthropic'
-    when 'consultorio' then 'openai'
+    when 'admin'       then 'anthropic'
     else 'groq'
   end;
 
@@ -381,7 +385,6 @@ $$;
 -- ─────────────────────────────────────────────
 -- SECCIÓN 8: ROW LEVEL SECURITY
 -- ─────────────────────────────────────────────
-
 alter table public.legali_profiles    enable row level security;
 alter table public.conversations      enable row level security;
 alter table public.legal_documents    enable row level security;
@@ -447,8 +450,8 @@ grant execute on function public.activate_plan        to service_role;
 -- ─────────────────────────────────────────────
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('legal-docs',     'legal-docs',     false, 52428800,  array['application/pdf','text/plain','text/markdown']),
-  ('session-uploads','session-uploads', false, 104857600, array['application/pdf','text/plain','text/markdown','application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+  ('legal-docs',      'legal-docs',      false, 52428800,  array['application/pdf','text/plain','text/markdown']),
+  ('session-uploads', 'session-uploads', false, 104857600, array['application/pdf','text/plain','text/markdown','application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
 on conflict (id) do nothing;
 
 -- Storage RLS: legal-docs
@@ -474,12 +477,30 @@ create policy "user_delete_own_session_upload"
   using (bucket_id = 'session-uploads' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ─────────────────────────────────────────────
--- SECCIÓN 11: PG_CRON — reset mensual
+-- SECCIÓN 11: PG_CRON — jobs programados
 -- ─────────────────────────────────────────────
+
+-- Reset mensual de cuotas (1ro de cada mes, 00:00 UTC)
 select cron.schedule(
   'legali-reset-monthly-quotas',
   '0 0 1 * *',
   $$ select public.reset_monthly_quotas(); $$
+);
+
+-- Limpieza semanal de conversaciones (domingos, 02:00 UTC)
+select cron.schedule(
+  'legali_conversations_cleanup',
+  '0 2 * * 0',
+  $$
+    delete from public.conversations c
+    using public.legali_profiles p
+    where c.user_id = p.id
+      and (
+        (p.plan = 'gratis'      and c.created_at < now() - interval '1 day') or
+        (p.plan = 'profesional' and c.created_at < now() - interval '90 days')
+        -- firma y admin: historial indefinido, no se limpian
+      );
+  $$
 );
 
 -- ─────────────────────────────────────────────
@@ -488,4 +509,4 @@ select cron.schedule(
 -- Ejecutar DESPUÉS de crear el usuario admin en Supabase Auth Dashboard:
 -- update public.legali_profiles
 --   set plan = 'admin', provider_assigned = 'anthropic', quota_total = 9999, active = true
---   where email = 'admin@legali.co';
+--   where email = 'tu@email.com';
