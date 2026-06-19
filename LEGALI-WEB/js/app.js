@@ -272,6 +272,9 @@ function _appendMessage(role, content, isHTML = false, isStreaming = false) {
   return { wrapper, bubble };
 }
 
+// ── Exponer _appendMessage para uso desde usuario.html (historial) ──
+window._appendMessage = _appendMessage;
+
 // ── Agregar chunk de streaming ────────────────────────────────
 let _streamBuffer = '';
 
@@ -589,9 +592,7 @@ function exportPDF() {
     <body>
       <h1>⚖️ LEGALI — Consulta Jurídica</h1>
       <div class="meta">
-        Fecha: ${new Date().toLocaleString('es-CO')} · 
-        Usuario: ${window.LEGALI_USER?.email || 'Anónimo'} · 
-        Plan: ${PLAN_CONFIG[window.LEGALI_USER?.plan]?.label || '—'}
+        Fecha: ${new Date().toLocaleString('es-CO')}
       </div>
       ${_buildPrintHTML()}
       <div class="footer">
@@ -803,9 +804,7 @@ async function exportWord() {
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: `Fecha: ${new Date().toLocaleString('es-CO')}  |  `, size: 20, color: '666666' }),
-        new TextRun({ text: `Usuario: ${window.LEGALI_USER?.email || '—'}  |  `, size: 20, color: '666666' }),
-        new TextRun({ text: `Plan: ${PLAN_CONFIG?.[window.LEGALI_USER?.plan]?.label || '—'}`, size: 20, color: '666666' }),
+        new TextRun({ text: `Fecha: ${new Date().toLocaleString('es-CO')}`, size: 20, color: '666666' }),
       ],
     }),
     new Paragraph({ text: '' }),
