@@ -488,13 +488,14 @@ select.form-input { font-family: var(--font-body); }
       <div class="page-header">
         <div>
           <div class="page-title">⚙️ Configuración de IA</div>
-          <div class="page-sub">API keys y modelos por plan. Estas keys se usan en el backend — nunca se exponen al usuario.</div>
+          <div class="page-sub">Modelos activos por plan. Las API Keys reales van en Supabase Edge Functions → Secrets.</div>
         </div>
       </div>
 
-      <div class="alert-banner info" style="display:flex">
-        🔐 Las API keys se guardan cifradas en Supabase Vault / variables de entorno de la Edge Function.
-        <strong style="margin-left:4px">Nunca en el frontend.</strong>
+      <div class="alert-banner info" style="margin-bottom:20px">
+        ℹ️ Los modelos y API Keys activos se configuran como secrets en Supabase Edge Functions.
+        Los cambios aquí se guardan como referencia en <code>legali_config</code> pero <strong>no afectan
+        la Edge Function directamente</strong>. Para cambiar keys activas: Supabase → Settings → Edge Functions → Secrets.
       </div>
 
       <div class="config-grid">
@@ -517,7 +518,7 @@ select.form-input { font-family: var(--font-body); }
         </div>
 
         <div class="config-card">
-          <div class="config-card-title">🧠 Anthropic (planes Pro y Firma)</div>
+          <div class="config-card-title">🧠 Anthropic (planes Profesional y Firma)</div>
           <div class="form-group">
             <label class="form-label">API Key</label>
             <input type="password" id="cfg-anthropic-key" class="form-input" placeholder="sk-ant-api03-..."/>
@@ -541,39 +542,18 @@ select.form-input { font-family: var(--font-body); }
         </div>
 
         <div class="config-card">
-          <div class="config-card-title">🟢 OpenAI (plan Consultorio)</div>
-          <div class="form-group">
-            <label class="form-label">API Key</label>
-            <input type="password" id="cfg-openai-key" class="form-input" placeholder="sk-proj-..."/>
-            <div class="form-hint">Obtener en platform.openai.com</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Modelo</label>
-            <select id="cfg-openai-model" class="form-input">
-              <option value="gpt-4o-mini">gpt-4o-mini (recomendado — económico)</option>
-              <option value="gpt-4o">gpt-4o</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="saveProviderConfig('openai')">Guardar OpenAI</button>
-        </div>
-
-        <div class="config-card">
           <div class="config-card-title">🔵 Límites de cuota por plan</div>
           <div class="form-group">
             <label class="form-label">Plan Gratis — consultas/mes</label>
             <input type="number" id="cfg-quota-gratis" class="form-input" value="5" min="1"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Plan Consultorio</label>
-            <input type="number" id="cfg-quota-cons" class="form-input" value="50" min="1"/>
-          </div>
-          <div class="form-group">
             <label class="form-label">Plan Profesional</label>
             <input type="number" id="cfg-quota-pro" class="form-input" value="200" min="1"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Plan Firma (0 = ilimitado)</label>
-            <input type="number" id="cfg-quota-firma" class="form-input" value="0" min="0"/>
+            <label class="form-label">Plan Firma</label>
+            <input type="number" id="cfg-quota-firma" class="form-input" value="900" min="1"/>
           </div>
           <button class="btn btn-primary btn-sm" onclick="saveQuotaConfig()">Guardar cuotas</button>
         </div>
@@ -1078,7 +1058,6 @@ async function saveProviderConfig(provider) {
   const keys = {
     groq: { key: document.getElementById('cfg-groq-key')?.value, model: document.getElementById('cfg-groq-model')?.value },
     anthropic: { key: document.getElementById('cfg-anthropic-key')?.value, model_pro: document.getElementById('cfg-anthropic-model-pro')?.value, model_firma: document.getElementById('cfg-anthropic-model-firma')?.value },
-    openai: { key: document.getElementById('cfg-openai-key')?.value, model: document.getElementById('cfg-openai-model')?.value },
   };
   const cfg = keys[provider];
   if (!cfg) return;
