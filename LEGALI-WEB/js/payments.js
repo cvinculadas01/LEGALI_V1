@@ -1,23 +1,30 @@
 // ============================================================
-// LEGALI v3.0 — js/payments.js
+// LEGALI v3.1 — js/payments.js
 // Wompi + MercadoPago + activación de plan
 // Cambios v3.0:
 //   - Eliminado plan 'consultorio'
 //   - Precio firma actualizado: $79 → $135 USD / $567.000 COP (TRM ≈ 4.200)
 //   - Eliminada facturación anual (simplificación)
 //   - Guard en initWompiCheckout e initMercadoPagoCheckout para planes inválidos
+// Cambios v3.1:
+//   - TRM documentada con fecha y fórmula explícita por plan
 // ============================================================
 
 'use strict';
 
 // ── Configuración de precios ──────────────────────────────────
-// ⚠️ Si la TRM cambia significativamente, actualizar cop de 'firma'
-// Fórmula: cop = usd × TRM  →  135 × 4.200 = 567.000
-const PRICING = {
-  profesional: { usd: 25,  cop: 105000 },
-  firma:       { usd: 135, cop: 567000 },
-};
+// TRM de referencia: $4.200 COP/USD — verificada junio 2026
+// Fuente: https://www.banrep.gov.co/es/estadisticas/trm
+//
+// ⚠️ ACTUALIZAR si la TRM cambia más del 10% respecto a 4.200:
+//   profesional: 25  × TRM → cop   (ej. TRM 4.500 → cop: 112500)
+//   firma:       135 × TRM → cop   (ej. TRM 4.500 → cop: 607500)
+//
 // Nota: facturación anual eliminada. Si se reactiva, recalcular con TRM vigente.
+const PRICING = {
+  profesional: { usd: 25,  cop: 105000 },   // 25  × 4.200
+  firma:       { usd: 135, cop: 567000 },   // 135 × 4.200
+};
 
 // Wompi public key — configurada en js/payment-keys.js (cargado antes
 // que este archivo). Para cambiar de sandbox a producción, editar
