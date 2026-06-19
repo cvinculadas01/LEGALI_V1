@@ -912,16 +912,14 @@ async function saveUser() {
   const nameParts = document.getElementById('modalUserName').value.trim().split(' ');
   const plan = document.getElementById('modalUserPlan').value;
   const active = document.getElementById('modalUserActive').value === 'true';
-  const PLAN_QUOTAS    = { gratis: 5, profesional: 200, firma: 900 };
-  const PLAN_PROVIDERS = { gratis: 'groq', profesional: 'anthropic', firma: 'anthropic' };
 
-  const { error } = await sb.from('legali_profiles').update({
-    nombre: nameParts[0] || '',
-    apellido: nameParts.slice(1).join(' ') || '',
-    plan, active,
-    provider_assigned: PLAN_PROVIDERS[plan],
-    quota_total: PLAN_QUOTAS[plan],
-  }).eq('id', id);
+  const { error } = await sb.rpc('admin_update_user', {
+    p_user_id:  id,
+    p_nombre:   nameParts[0] || '',
+    p_apellido: nameParts.slice(1).join(' ') || '',
+    p_plan:     plan,
+    p_active:   active,
+  });
 
   if (error) {
     document.getElementById('modalUserAlert').innerHTML = `<div class="alert-banner error">${error.message}</div>`;
