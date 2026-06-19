@@ -160,7 +160,7 @@ function _parseSseLine(line, provider) {
 async function _devModeResponse(onChunk, onDone) {
   const response = 'DEV MODE: El proxy de IA no está configurado. ' +
     'Sube la Edge Function `ai-proxy` a Supabase para activar el chat real. ' +
-    'Ver instrucciones en `supabase/functions/ai-proxy/index.ts`.';
+    'Ver instrucciones en `backend/supabase/functions/ai-proxy/index.ts`.';
 
   const words = response.split(' ');
   let full = '';
